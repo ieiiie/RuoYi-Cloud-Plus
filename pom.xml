@@ -22,7 +22,6 @@
         <!-- Spring 生态依赖版本 -->
         <spring-boot.version>4.1.0</spring-boot.version>
         <spring-cloud.version>2025.1.2</spring-cloud.version>
-        <spring-boot-admin.version>4.1.1</spring-boot-admin.version>
         <spring-ai.version>2.0.0</spring-ai.version>
         <springdoc.version>3.0.3</springdoc.version>
         <swagger.core.version>2.2.47</swagger.core.version>
@@ -41,13 +40,11 @@
         <justauth.version>3.0.1</justauth.version>
         <bouncycastle.version>1.85</bouncycastle.version>
 
-        <!-- 缓存、锁与任务调度相关依赖版本 -->
+        <!-- 缓存与锁相关依赖版本 -->
         <redisson.version>4.6.1</redisson.version>
         <lock4j.version>2.2.7</lock4j.version>
-        <snailjob.version>2.0.2</snailjob.version>
-        <snailai.version>1.1.1</snailai.version>
 
-        <!-- 通用工具、编译增强与代码生成相关依赖版本 -->
+        <!-- 通用工具与编译增强相关依赖版本 -->
         <hutool.version>5.8.47</hutool.version>
         <lombok.version>1.18.46</lombok.version>
         <mapstruct-plus.version>1.5.1</mapstruct-plus.version>
@@ -72,9 +69,6 @@
         <sms4j.version>3.3.5</sms4j.version>
         <!-- 面向运行时的D-ORM依赖 -->
         <anyline.version>8.7.3-20260306</anyline.version>
-        <!-- 工作流配置 -->
-        <warm-flow.version>1.8.9</warm-flow.version>
-        <liteflow.version>2.16.1.2</liteflow.version>
         <!-- mqtt客户端 -->
         <mica-mqtt.version>2.6.8</mica-mqtt.version>
         <!-- mq配置 -->
@@ -270,43 +264,6 @@
                 <version>${fory.version}</version>
             </dependency>
 
-            <!--  SnailJob Client -->
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-job-client-starter</artifactId>
-                <version>${snailjob.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-job-client-retry-core</artifactId>
-                <version>${snailjob.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-job-client-job-core</artifactId>
-                <version>${snailjob.version}</version>
-            </dependency>
-
-            <!-- Snail AI Agent 聊天室 -->
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-ai-agent-chat-starter</artifactId>
-                <version>${snailai.version}</version>
-            </dependency>
-
-            <!-- Snail AI Agent 执行器 -->
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-ai-agent-executor-starter</artifactId>
-                <version>${snailai.version}</version>
-            </dependency>
-            <!-- Snail AI OpenAPI 启动器 -->
-            <dependency>
-                <groupId>com.aizuda</groupId>
-                <artifactId>snail-ai-openapi-starter</artifactId>
-                <version>${snailai.version}</version>
-            </dependency>
-
             <!-- 加密包引入 -->
             <dependency>
                 <groupId>org.bouncycastle</groupId>
@@ -417,25 +374,6 @@
                 <version>${rocketmq.version}</version>
             </dependency>
 
-            <!-- Warm-Flow国产工作流引擎, 在线文档：http://warm-flow.cn/ -->
-            <dependency>
-                <groupId>org.dromara.warm</groupId>
-                <artifactId>warm-flow-mybatis-plus-sb4-starter</artifactId>
-                <version>${warm-flow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.dromara.warm</groupId>
-                <artifactId>warm-flow-plugin-ui-sb-web</artifactId>
-                <version>${warm-flow.version}</version>
-            </dependency>
-
-            <!-- LiteFlow 规则编排引擎 -->
-            <dependency>
-                <groupId>com.yomahub</groupId>
-                <artifactId>liteflow-spring-boot-starter</artifactId>
-                <version>${liteflow.version}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.dromara.mica-mqtt</groupId>
                 <artifactId>mica-mqtt-client-spring-boot-starter</artifactId>
@@ -448,11 +386,9 @@
     <modules>
         <module>ruoyi-auth</module>
         <module>ruoyi-gateway</module>
-        <module>ruoyi-visual</module>
         <module>ruoyi-modules</module>
         <module>ruoyi-api</module>
         <module>ruoyi-common</module>
-        <module>ruoyi-example</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -590,4 +526,3 @@
     </pluginRepositories>
 
 </project>
-

@@ -137,56 +137,6 @@ services:
     privileged: true
     network_mode: "host"
 
-  ruoyi-monitor:
-    image: ruoyi/ruoyi-monitor:6.0.0
-    container_name: ruoyi-monitor
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-    ports:
-      - "9100:9100"
-    volumes:
-      # 配置文件
-      - /docker/ruoyi-monitor/logs/:/ruoyi/monitor/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-    privileged: true
-    network_mode: "host"
-
-  ruoyi-snailjob-server:
-    image: ruoyi/ruoyi-snailjob-server:6.0.0
-    container_name: ruoyi-snailjob-server
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-    ports:
-      - "8800:8800"
-      - "17888:17888"
-    volumes:
-      - /docker/snailjob/logs/:/ruoyi/snailjob/logs
-    privileged: true
-    network_mode: "host"
-
-  ruoyi-snailai-server:
-    image: ruoyi/ruoyi-snailai-server:6.0.0
-    container_name: ruoyi-snailai-server
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-      # Docling 与 PaddleOCR 服务需单独部署；host 网络模式下默认通过宿主机端口访问
-      SNAIL_AI_RAG_DOCLING_ENABLED: ${SNAIL_AI_RAG_DOCLING_ENABLED:-true}
-      SNAIL_AI_RAG_DOCLING_URL: ${SNAIL_AI_RAG_DOCLING_URL:-http://127.0.0.1:5100}
-      SNAIL_AI_RAG_DOCLING_PADDLE_OCR_ENABLED: ${SNAIL_AI_RAG_DOCLING_PADDLE_OCR_ENABLED:-true}
-      SNAIL_AI_RAG_DOCLING_PADDLE_OCR_URL: ${SNAIL_AI_RAG_DOCLING_PADDLE_OCR_URL:-http://127.0.0.1:8866/ocr}
-    ports:
-      - "8900:8900"
-      - "18888:18888"
-    volumes:
-      - /docker/snailai/logs/:/ruoyi/snailai/logs
-      - /docker/snailai/upload/:/ruoyi/snailai/upload
-    privileged: true
-    network_mode: "host"
-
   ruoyi-gateway:
     image: ruoyi/ruoyi-gateway:6.0.0
     container_name: ruoyi-gateway
@@ -235,40 +185,6 @@ services:
     privileged: true
     network_mode: "host"
 
-  ruoyi-gen:
-    image: ruoyi/ruoyi-gen:6.0.0
-    container_name: ruoyi-gen
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-    ports:
-      - "9202:9202"
-    volumes:
-      # 配置文件
-      - /docker/ruoyi-gen/logs/:/ruoyi/gen/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-    privileged: true
-    network_mode: "host"
-
-  ruoyi-job:
-    image: ruoyi/ruoyi-job:6.0.0
-    container_name: ruoyi-job
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-      SERVER_PORT: 9203
-      SNAIL_PORT: 29203
-    ports:
-      - "9203:9203"
-    volumes:
-      # 配置文件
-      - /docker/ruoyi-job/logs/:/ruoyi/job/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-    privileged: true
-    network_mode: "host"
-
   ruoyi-resource:
     image: ruoyi/ruoyi-resource:6.0.0
     container_name: ruoyi-resource
@@ -282,41 +198,6 @@ services:
       - /docker/ruoyi-resource/logs/:/ruoyi/resource/logs
       # skywalking 探针
       - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-    privileged: true
-    network_mode: "host"
-
-  ruoyi-workflow:
-    image: ruoyi/ruoyi-workflow:6.0.0
-    container_name: ruoyi-workflow
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-    ports:
-      - "9205:9205"
-    volumes:
-      # 配置文件
-      - /docker/ruoyi-workflow/logs/:/ruoyi/workflow/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-    privileged: true
-    network_mode: "host"
-
-  ruoyi-ai:
-    image: ruoyi/ruoyi-ai:6.0.0
-    container_name: ruoyi-ai
-    environment:
-      # 时区上海
-      TZ: Asia/Shanghai
-    ports:
-      - "9206:9206"
-      - "29206:29206"
-    volumes:
-      # 配置文件
-      - /docker/ruoyi-ai/logs/:/ruoyi/ai/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
-      # Snail AI Skill 临时目录
-      - /docker/snailai/agent/skills/:/tmp/snail-ai-agent/skills
     privileged: true
     network_mode: "host"
 

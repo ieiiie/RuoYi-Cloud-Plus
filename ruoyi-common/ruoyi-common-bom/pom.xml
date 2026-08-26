@@ -89,13 +89,6 @@
                 <version>${revision}</version>
             </dependency>
 
-            <!-- 定时任务 -->
-            <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-job</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
             <!-- RPC服务 -->
             <dependency>
                 <groupId>org.dromara</groupId>
@@ -202,13 +195,6 @@
                 <version>${revision}</version>
             </dependency>
 
-            <!-- liteflow模块 -->
-            <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-liteflow</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
             <!-- 授权认证 -->
             <dependency>
                 <groupId>org.dromara</groupId>
@@ -230,23 +216,9 @@
                 <version>${revision}</version>
             </dependency>
 
-            <!-- AI模块 -->
-            <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-ai</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.dromara</groupId>
                 <artifactId>ruoyi-common-mqtt</artifactId>
-                <version>${revision}</version>
-            </dependency>
-
-            <!-- mcp模块 -->
-            <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-mcp</artifactId>
                 <version>${revision}</version>
             </dependency>
 

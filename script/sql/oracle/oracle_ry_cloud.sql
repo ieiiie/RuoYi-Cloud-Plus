@@ -347,7 +347,6 @@ comment on column sys_menu.remark       is '备注';
 insert into sys_menu values(1761400000000000001, '系统管理', 0, 1, 'system', null, '', 'N', 'Y', 'M', '0', '0', '', 'system', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '系统管理目录');
 insert into sys_menu values(1761400000000000002, '系统监控', 0, 3, 'monitor', null, '', 'N', 'Y', 'M', '0', '0', '', 'monitor', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '系统监控目录');
 insert into sys_menu values(1761400000000000003, '系统工具', 0, 4, 'tool', null, '', 'N', 'Y', 'M', '0', '0', '', 'tool', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '系统工具目录');
-insert into sys_menu values(1761400000000000005, '测试菜单', 0, 5, 'demo', null, '', 'N', 'Y', 'M', '0', '0', null, 'star', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000000004, 'PLUS官网', 0, 9, 'https://gitee.com/dromara/RuoYi-Cloud-Plus', null, '', 'Y', 'Y', 'M', '0', '0', '', 'guide', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, 'RuoYi-Vue-Plus官网地址');
 -- 二级菜单
 insert into sys_menu values(1761400000000000100, '用户管理', 1761400000000000001, 1, 'user', 'system/user/index', '', 'N', 'Y', 'C', '0', '0', 'system:user:list', 'user', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '用户管理菜单');
@@ -361,13 +360,8 @@ insert into sys_menu values(1761400000000000107, '通知公告', 176140000000000
 insert into sys_menu values(1761400000000000108, '日志管理', 1761400000000000001, 9, 'log', '', '', 'N', 'Y', 'M', '0', '0', '', 'log', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '日志管理菜单');
 insert into sys_menu values(1761400000000000109, '在线用户', 1761400000000000002, 1, 'online', 'monitor/online/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:online:list', 'online', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '在线用户菜单');
 insert into sys_menu values(1761400000000000113, '缓存监控', 1761400000000000002, 5, 'cache', 'monitor/cache/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:cache:list', 'redis', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '缓存监控菜单');
-insert into sys_menu values(1761400000000000110, 'SnailJob控制台', 1761400000000000002, 2, 'http://localhost:8800/snail-job', '', '', 'Y', 'Y', 'C', '0', '0', 'monitor:job:list', 'job', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, 'SJ定时任务菜单');
-insert into sys_menu values(1761400000000000121, 'AI控制台', 1761400000000000002, 7, 'http://localhost:8900/snail-ai', '', '', 'Y', 'Y', 'C', '0', '0', 'monitor:snailai:list', 'checkbox', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, 'AI控制台菜单');
 insert into sys_menu values(1761400000000000112, 'Nacos控制台', 1761400000000000002, 4, 'http://localhost:8848/nacos', '', '', 'Y', 'Y', 'C', '0', '0', 'monitor:nacos:list', 'nacos', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '服务治理菜单');
-insert into sys_menu values(1761400000000000114, 'Admin控制台', 1761400000000000002, 5, 'http://localhost:9100/login', '', '', 'Y', 'Y', 'C', '0', '0', 'monitor:server:list', 'server', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '服务监控菜单');
-insert into sys_menu values(1761400000000000115, '代码生成', 1761400000000000003, 2, 'gen', 'tool/gen/index', '', 'N', 'Y', 'C', '0', '0', 'tool:gen:list', 'code', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '代码生成菜单');
 insert into sys_menu values(1761400000000000123, '客户端管理', 1761400000000000001, 11, 'client', 'system/client/index', '', 'N', 'Y', 'C', '0', '0', 'system:client:list', 'international', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '客户端管理菜单');
-insert into sys_menu values(1761400000000000116, '修改生成配置', 1761400000000000003, 2, 'gen-edit/index/:tableId', 'tool/gen/editTable', '', 'N', 'N', 'C', '1', '0', 'tool:gen:edit', '#', '/tool/gen', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000000130, '分配用户', 1761400000000000001, 2, 'role-auth/user/:roleId', 'system/role/authUser', '', 'N', 'N', 'C', '1', '0', 'system:role:edit', '#', '/system/role', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000000131, '分配角色', 1761400000000000001, 1, 'user-auth/role/:userId', 'system/user/authRole', '', 'N', 'N', 'C', '1', '0', 'system:user:edit', '#', '/system/user', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000000133, '文件配置管理', 1761400000000000001, 10, 'oss-config/index', 'system/oss/config', '', 'N', 'N', 'C', '1', '0', 'system:ossConfig:list', '#', '/system/oss', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
@@ -439,12 +433,6 @@ insert into sys_menu values(1761400000000001046, '在线查询', 176140000000000
 insert into sys_menu values(1761400000000001047, '批量强退', 1761400000000000109, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'monitor:online:batchLogout', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000001048, '单条强退', 1761400000000000109, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'monitor:online:forceLogout', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 -- 代码生成按钮
-insert into sys_menu values(1761400000000001055, '生成查询', 1761400000000000115, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001056, '生成修改', 1761400000000000115, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001057, '生成删除', 1761400000000000115, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001058, '导入代码', 1761400000000000115, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:import', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001059, '预览代码', 1761400000000000115, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:preview', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001060, '生成代码', 1761400000000000115, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'tool:gen:code', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 -- oss相关按钮
 insert into sys_menu values(1761400000000001600, '文件查询', 1761400000000000118, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:oss:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000001601, '文件上传', 1761400000000000118, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:oss:upload', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
@@ -460,75 +448,6 @@ insert into sys_menu values(1761400000000001062, '客户端管理新增', 176140
 insert into sys_menu values(1761400000000001063, '客户端管理修改', 1761400000000000123, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000001064, '客户端管理删除', 1761400000000000123, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
 insert into sys_menu values(1761400000000001065, '客户端管理导出', 1761400000000000123, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:export', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
--- 测试菜单
-insert into sys_menu values(1761400000000001500, '测试单表', 1761400000000000005, 1, 'demo', 'demo/demo/index', '', 'N', 'Y', 'C', '0', '0', 'demo:demo:list', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '测试单表菜单');
-insert into sys_menu values(1761400000000001501, '测试单表查询', 1761400000000001500, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:demo:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001502, '测试单表新增', 1761400000000001500, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:demo:add', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001503, '测试单表修改', 1761400000000001500, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:demo:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001504, '测试单表删除', 1761400000000001500, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:demo:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001505, '测试单表导出', 1761400000000001500, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:demo:export', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001506, '测试树表', 1761400000000000005, 1, 'tree', 'demo/tree/index', '', 'N', 'Y', 'C', '0', '0', 'demo:tree:list', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '测试树表菜单');
-insert into sys_menu values(1761400000000001507, '测试树表查询', 1761400000000001506, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:tree:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001508, '测试树表新增', 1761400000000001506, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:tree:add', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001509, '测试树表修改', 1761400000000001506, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:tree:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001510, '测试树表删除', 1761400000000001506, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:tree:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
-insert into sys_menu values(1761400000000001511, '测试树表导出', 1761400000000001506, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'demo:tree:export', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate, null, null, '');
---工作流相关
-INSERT INTO sys_menu VALUES (1761400000000011616, '工作流', 0, 6, 'workflow', '', '', 'N', 'Y', 'M', '0', '0', '', 'workflow', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011618, '我的任务', 0, 7, 'task', '', '', 'N', 'Y', 'M', '0', '0', '', 'my-task', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011619, '我的待办', 1761400000000011618, 2, 'taskWaiting', 'workflow/task/taskWaiting', '', 'N', 'N', 'C', '0', '0', '', 'waiting', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011632, '我的已办', 1761400000000011618, 3, 'taskFinish', 'workflow/task/taskFinish', '', 'N', 'N', 'C', '0', '0', '', 'finish', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011633, '我的抄送', 1761400000000011618, 4, 'taskCopyList', 'workflow/task/taskCopyList', '', 'N', 'N', 'C', '0', '0', '', 'my-copy', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011620, '流程定义', 1761400000000011616, 3, 'processDefinition', 'workflow/processDefinition/index', '', 'N', 'N', 'C', '0', '0', 'workflow:definition:list', 'process-definition', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011621, '流程实例', 1761400000000011630, 1, 'processInstance', 'workflow/processInstance/index', '', 'N', 'N', 'C', '0', '0', 'workflow:instance:list', 'tree-table', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011622, '流程分类', 1761400000000011616, 1, 'category', 'workflow/category/index', '', 'N', 'Y', 'C', '0', '0', 'workflow:category:list', 'category', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011629, '我发起的', 1761400000000011618, 1, 'myDocument', 'workflow/task/myDocument', '', 'N', 'N', 'C', '0', '0', 'workflow:instance:currentList', 'guide', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011630, '流程监控', 1761400000000011616, 4, 'processMonitor', '', '', 'N', 'Y', 'M', '0', '0', '', 'monitor', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011631, '待办任务', 1761400000000011630, 2, 'allTaskWaiting', 'workflow/task/allTaskWaiting', '', 'N', 'N', 'C', '0', '0', 'workflow:task:list', 'waiting', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011660, '待办任务修改', 1761400000000011631, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:task:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011700, '流程设计', 1761400000000011616, 5, 'design/index', 'workflow/processDefinition/design', '', 'N', 'N', 'C', 'N', 'Y', 'workflow:leave:edit', '#', '/workflow/processDefinition', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011701, '请假申请', 1761400000000011616, 6, 'leaveEdit/index', 'workflow/leave/leaveEdit', '', 'N', 'N', 'C', 'N', 'Y', 'workflow:leave:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
-INSERT INTO sys_menu VALUES (1761400000000011623, '流程分类查询', 1761400000000011622, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:category:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011624, '流程分类新增', 1761400000000011622, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:category:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011625, '流程分类修改', 1761400000000011622, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:category:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011626, '流程分类删除', 1761400000000011622, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:category:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011627, '流程分类导出', 1761400000000011622, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:category:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
--- 流程实例管理相关按钮
-INSERT INTO sys_menu VALUES (1761400000000011653, '流程实例查询', 1761400000000011621, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011654, '流程变量查询', 1761400000000011621, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:variableQuery', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011655, '流程变量修改', 1761400000000011621, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:variable', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011656, '流程实例激活/挂起', 1761400000000011621, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:active', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011657, '流程实例删除', 1761400000000011621, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011658, '流程实例作废', 1761400000000011621, 6, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:invalid', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011659, '流程实例撤销', 1761400000000011621, 7, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:instance:cancel', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
--- 流程定义管理相关按钮
-INSERT INTO sys_menu VALUES (1761400000000011644, '流程定义查询', 1761400000000011620, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011645, '流程定义新增', 1761400000000011620, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011646, '流程定义修改', 1761400000000011620, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011647, '流程定义删除', 1761400000000011620, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011648, '流程定义导出', 1761400000000011620, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011649, '流程定义导入', 1761400000000011620, 6, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:import', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011650, '流程定义发布/取消发布', 1761400000000011620, 7, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:publish', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011651, '流程定义复制', 1761400000000011620, 8, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:copy', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011652, '流程定义激活/挂起', 1761400000000011620, 9, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:definition:active', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
-INSERT INTO sys_menu VALUES (1761400000000011801, '流程表达式', 1761400000000011616, 2, 'spel', 'workflow/spel/index', '', 'N', 'Y', 'C', '0', '0', 'workflow:spel:list', 'input', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, 1761100000000000001, SYSDATE, '流程达式定义菜单');
-INSERT INTO sys_menu VALUES (1761400000000011802, '流程spel表达式定义查询', 1761400000000011801, 1, '#', '', NULL, 'N', 'Y', 'F', '0', '0', 'workflow:spel:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011803, '流程spel表达式定义新增', 1761400000000011801, 2, '#', '', NULL, 'N', 'Y', 'F', '0', '0', 'workflow:spel:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011804, '流程spel表达式定义修改', 1761400000000011801, 3, '#', '', NULL, 'N', 'Y', 'F', '0', '0', 'workflow:spel:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011805, '流程spel表达式定义删除', 1761400000000011801, 4, '#', '', NULL, 'N', 'Y', 'F', '0', '0', 'workflow:spel:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011806, '流程spel表达式定义导出', 1761400000000011801, 5, '#', '', NULL, 'N', 'Y', 'F', '0', '0', 'workflow:spel:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
-INSERT INTO sys_menu VALUES (1761400000000011638, '请假申请', 1761400000000000005, 1, 'leave', 'workflow/leave/index', '', 'N', 'Y', 'C', '0', '0', 'workflow:leave:list', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '请假申请菜单');
-INSERT INTO sys_menu VALUES (1761400000000011639, '请假申请查询', 1761400000000011638, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:leave:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011640, '请假申请新增', 1761400000000011638, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:leave:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011641, '请假申请修改', 1761400000000011638, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:leave:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011642, '请假申请删除', 1761400000000011638, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:leave:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-INSERT INTO sys_menu VALUES (1761400000000011643, '请假申请导出', 1761400000000011638, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'workflow:leave:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE, NULL, NULL, '');
-
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色
 -- ----------------------------
@@ -1059,7 +978,7 @@ create index idx_sys_message_category_time on sys_message(category, create_time)
 
 comment on table  sys_message                  is '消息记录表';
 comment on column sys_message.message_id       is '消息ID';
-comment on column sys_message.category         is '消息分组(system/notice/workflow)';
+comment on column sys_message.category         is '消息分组(system/notice)';
 comment on column sys_message.type             is '消息类型';
 comment on column sys_message.source           is '消息来源';
 comment on column sys_message.title            is '标题';
@@ -1076,115 +995,6 @@ comment on column sys_message.update_time      is '更新时间';
 
 
 -- ----------------------------
--- 19、代码生成业务表
--- ----------------------------
-create table gen_table (
-  table_id          number(20)       not null,
-  data_name         varchar2(200)    default '',
-  table_name        varchar2(200)    default '',
-  table_comment     varchar2(500)    default '',
-  class_name        varchar2(100)    default '',
-  tpl_category      varchar2(200)    default 'crud',
-  frontend_type     varchar2(30)     default 'vue',
-  package_name      varchar2(100),
-  module_name       varchar2(30),
-  business_name     varchar2(30),
-  function_name     varchar2(50),
-  function_author   varchar2(50),
-  gen_type          char(1)          default '0',
-  gen_path          varchar2(200)    default '/',
-  options           varchar2(1000),
-  create_dept       number(20)       default null,
-  create_by         number(20)       default null,
-  create_time       date,
-  update_by         number(20)       default null,
-  update_time       date,
-  remark            varchar2(500)    default null
-);
-
-alter table gen_table add constraint pk_gen_table primary key (table_id);
-
-comment on table  gen_table                   is '代码生成业务表';
-comment on column gen_table.table_id          is '编号';
-comment on column gen_table.data_name         is '数据源名称';
-comment on column gen_table.table_name        is '表名称';
-comment on column gen_table.table_comment     is '表描述';
-comment on column gen_table.class_name        is '实体类名称';
-comment on column gen_table.tpl_category      is '使用的模板（crud单表操作 tree树表操作）';
-comment on column gen_table.frontend_type     is '前端模板类型';
-comment on column gen_table.package_name      is '生成包路径';
-comment on column gen_table.module_name       is '生成模块名';
-comment on column gen_table.business_name     is '生成业务名';
-comment on column gen_table.function_name     is '生成功能名';
-comment on column gen_table.function_author   is '生成功能作者';
-comment on column gen_table.gen_type          is '生成代码方式（0zip压缩包 1自定义路径）';
-comment on column gen_table.gen_path          is '生成路径（不填默认项目路径）';
-comment on column gen_table.options           is '其它生成选项';
-comment on column gen_table.create_dept       is '创建部门';
-comment on column gen_table.create_by         is '创建者';
-comment on column gen_table.create_time       is '创建时间';
-comment on column gen_table.update_by         is '更新者';
-comment on column gen_table.update_time       is '更新时间';
-comment on column gen_table.remark            is '备注';
-
-
--- ----------------------------
--- 20、代码生成业务表字段
--- ----------------------------
-create table gen_table_column (
-  column_id         number(20)      not null,
-  table_id          number(20),
-  column_name       varchar2(200),
-  column_comment    varchar2(500),
-  column_type       varchar2(100),
-  java_type         varchar2(500),
-  java_field        varchar2(200),
-  is_pk             char(1),
-  is_increment      char(1),
-  is_required       char(1),
-  is_insert         char(1),
-  is_edit           char(1),
-  is_list           char(1),
-  is_query          char(1),
-  query_type        varchar2(200)    default 'EQ',
-  html_type         varchar2(200),
-  dict_type         varchar2(200)    default '',
-  sort              number(4),
-  create_dept       number(20)      default null,
-  create_by         number(20)      default null,
-  create_time       date ,
-  update_by         number(20)      default null,
-  update_time       date
-);
-
-alter table gen_table_column add constraint pk_gen_table_column primary key (column_id);
-
-comment on table  gen_table_column                is '代码生成业务表字段';
-comment on column gen_table_column.column_id      is '编号';
-comment on column gen_table_column.table_id       is '归属表编号';
-comment on column gen_table_column.column_name    is '列名称';
-comment on column gen_table_column.column_comment is '列描述';
-comment on column gen_table_column.column_type    is '列类型';
-comment on column gen_table_column.java_type      is 'JAVA类型';
-comment on column gen_table_column.java_field     is 'JAVA字段名';
-comment on column gen_table_column.is_pk          is '是否主键（1是）';
-comment on column gen_table_column.is_increment   is '是否自增（1是）';
-comment on column gen_table_column.is_required    is '是否必填（1是）';
-comment on column gen_table_column.is_insert      is '是否为插入字段（1是）';
-comment on column gen_table_column.is_edit        is '是否编辑字段（1是）';
-comment on column gen_table_column.is_list        is '是否列表字段（1是）';
-comment on column gen_table_column.is_query       is '是否查询字段（1是）';
-comment on column gen_table_column.query_type     is '查询方式（等于、不等于、大于、小于、范围）';
-comment on column gen_table_column.html_type      is '显示类型（文本框、文本域、下拉框、复选框、单选框、日期控件）';
-comment on column gen_table_column.dict_type      is '字典类型';
-comment on column gen_table_column.sort           is '排序';
-comment on column gen_table_column.create_dept    is '创建部门';
-comment on column gen_table_column.create_by      is '创建者';
-comment on column gen_table_column.create_time    is '创建时间';
-comment on column gen_table_column.update_by      is '更新者';
-comment on column gen_table_column.update_time    is '更新时间';
-
-
 -- ----------------------------
 -- OSS对象存储表
 -- ----------------------------
@@ -1320,98 +1130,6 @@ comment on column sys_client.update_time            is '更新时间';
 
 insert into sys_client values (1762000000000000001, 'e5cd7e4891bf95d1d19206ce24a7b32e', 'pc', 'pc123', 'password,social', 'pc', null, null, 1800, 604800, 0, 0, 1761000000000000103, 1761100000000000001, sysdate, 1761100000000000001, sysdate);
 insert into sys_client values (1762000000000000002, '428a8310cd442757ae699df5d894f051', 'app', 'app123', 'password,sms,social', 'android', null, null, 1800, 604800, 0, 0, 1761000000000000103, 1761100000000000001, sysdate, 1761100000000000001, sysdate);
-
-create table test_demo (
-   id          number(20)      not null,
-   dept_id     number(20)      default null,
-   user_id     number(20)      default null,
-   order_num   number(10)      default 0,
-   test_key    varchar2(255)   default null,
-   value       varchar2(255)   default null,
-   version     number(10)      default 0,
-   create_dept number(20)      default null,
-   create_time date,
-   create_by   number(20)      default null,
-   update_time date,
-   update_by   number(20)      default null,
-   del_flag    number(2)       default 0
-);
-
-alter table test_demo add constraint pk_test_demo primary key (id);
-
-comment on table  test_demo              is '测试单表';
-comment on column test_demo.id           is '主键';
-comment on column test_demo.dept_id      is '部门id';
-comment on column test_demo.user_id      is '用户id';
-comment on column test_demo.order_num    is '排序号';
-comment on column test_demo.test_key     is 'key键';
-comment on column test_demo.value        is '值';
-comment on column test_demo.version      is '版本';
-comment on column test_demo.create_dept  is '创建部门';
-comment on column test_demo.create_time  is '创建时间';
-comment on column test_demo.create_by    is '创建人';
-comment on column test_demo.update_time  is '更新时间';
-comment on column test_demo.update_by    is '更新人';
-comment on column test_demo.del_flag     is '删除标志';
-
-create table test_tree (
-   id          number(20)      not null,
-   parent_id   number(20)      default 0,
-   dept_id     number(20)      default null,
-   user_id     number(20)      default null,
-   tree_name   varchar2(255)   default null,
-   version     number(10)      default 0,
-   create_dept number(20)      default null,
-   create_time date,
-   create_by   number(20)      default null,
-   update_time date,
-   update_by   number(20)      default null,
-   del_flag    number(2)       default 0
-);
-
-alter table test_tree add constraint pk_test_tree primary key (id);
-
-comment on table  test_tree              is '测试树表';
-comment on column test_tree.id           is '主键';
-comment on column test_tree.parent_id    is '父id';
-comment on column test_tree.dept_id      is '部门id';
-comment on column test_tree.user_id      is '用户id';
-comment on column test_tree.tree_name    is '值';
-comment on column test_tree.version      is '版本';
-comment on column test_tree.create_dept  is '创建部门';
-comment on column test_tree.create_time  is '创建时间';
-comment on column test_tree.create_by    is '创建人';
-comment on column test_tree.update_time  is '更新时间';
-comment on column test_tree.update_by    is '更新人';
-comment on column test_tree.del_flag     is '删除标志';
-
-insert into test_demo values (1762100000000000001, 1761000000000000102, 1761100000000000004, 1, '测试数据权限', '测试', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000002, 1761000000000000102, 1761100000000000003, 2, '子节点1', '111', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000003, 1761000000000000102, 1761100000000000003, 3, '子节点2', '222', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000004, 1761000000000000108, 1761100000000000004, 4, '测试数据', 'demo', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000005, 1761000000000000108, 1761100000000000003, 13, '子节点11', '1111', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000006, 1761000000000000108, 1761100000000000003, 12, '子节点22', '2222', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000007, 1761000000000000108, 1761100000000000003, 11, '子节点33', '3333', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000008, 1761000000000000108, 1761100000000000003, 10, '子节点44', '4444', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000009, 1761000000000000108, 1761100000000000003, 9, '子节点55', '5555', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000010, 1761000000000000108, 1761100000000000003, 8, '子节点66', '6666', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000011, 1761000000000000108, 1761100000000000003, 7, '子节点77', '7777', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000012, 1761000000000000108, 1761100000000000003, 6, '子节点88', '8888', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_demo values (1762100000000000013, 1761000000000000108, 1761100000000000003, 5, '子节点99', '9999', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-
-insert into test_tree values (1762200000000000001, NULL, 1761000000000000102, 1761100000000000004, '测试数据权限', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000002, 1762200000000000001, 1761000000000000102, 1761100000000000003, '子节点1', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000003, 1762200000000000002, 1761000000000000102, 1761100000000000003, '子节点2', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000004, NULL, 1761000000000000108, 1761100000000000004, '测试树1', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000005, 1762200000000000004, 1761000000000000108, 1761100000000000003, '子节点11', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000006, 1762200000000000004, 1761000000000000108, 1761100000000000003, '子节点22', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000007, 1762200000000000004, 1761000000000000108, 1761100000000000003, '子节点33', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000008, 1762200000000000005, 1761000000000000108, 1761100000000000003, '子节点44', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000009, 1762200000000000006, 1761000000000000108, 1761100000000000003, '子节点55', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000010, 1762200000000000007, 1761000000000000108, 1761100000000000003, '子节点66', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000011, 1762200000000000007, 1761000000000000108, 1761100000000000003, '子节点77', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000012, 1762200000000000010, 1761000000000000108, 1761100000000000003, '子节点88', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
-insert into test_tree values (1762200000000000013, 1762200000000000010, 1761000000000000108, 1761100000000000003, '子节点99', 0, 1761000000000000103, sysdate, 1761100000000000001, null, NULL, 0);
 
 -- for AT mode you must to init this sql for you business database. the seata server not need it.
 CREATE TABLE undo_log

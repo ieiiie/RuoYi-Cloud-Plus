@@ -21,7 +21,6 @@
         <module>ruoyi-common-satoken</module>
         <module>ruoyi-common-web</module>
         <module>ruoyi-common-mybatis</module>
-        <module>ruoyi-common-job</module>
         <module>ruoyi-common-dubbo</module>
         <module>ruoyi-common-seata</module>
         <module>ruoyi-common-loadbalancer</module>
@@ -37,13 +36,10 @@
         <module>ruoyi-common-json</module>
         <module>ruoyi-common-encrypt</module>
         <module>ruoyi-common-push</module>
-        <module>ruoyi-common-liteflow</module>
         <module>ruoyi-common-social</module>
         <module>ruoyi-common-nacos</module>
         <module>ruoyi-common-bus</module>
-        <module>ruoyi-common-ai</module>
         <module>ruoyi-common-mqtt</module>
-        <module>ruoyi-common-mcp</module>
     </modules>
 
     <artifactId>ruoyi-common</artifactId>

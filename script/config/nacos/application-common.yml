@@ -218,7 +218,6 @@ xss:
   enabled: true
   excludeUrls:
     - /system/notice
-    - /warm-flow/save-json
 
 # 接口文档配置
 springdoc:
