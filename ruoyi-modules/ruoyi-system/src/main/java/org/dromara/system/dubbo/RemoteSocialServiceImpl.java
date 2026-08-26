@@ -3,6 +3,7 @@ package org.dromara.system.dubbo;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.dromara.common.core.utils.MapstructUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteSocialService;
 import org.dromara.system.api.domain.bo.RemoteSocialBo;
 import org.dromara.system.api.domain.vo.RemoteSocialVo;
@@ -33,8 +34,15 @@ public class RemoteSocialServiceImpl implements RemoteSocialService {
      */
     @Override
     public List<RemoteSocialVo> selectByAuthId(String authId) {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         List<SysSocialVo> list = sysSocialService.selectByAuthId(authId);
         return MapstructUtils.convert(list, RemoteSocialVo.class);
+    }
+
+    @Override
+    public List<RemoteSocialVo> selectByAuthId(String authId, String tenantId) {
+        TenantHelper.checkTenantId(tenantId);
+        return TenantHelper.dynamic(tenantId, () -> selectByAuthId(authId));
     }
 
     /**

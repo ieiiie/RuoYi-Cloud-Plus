@@ -21,6 +21,13 @@ public interface RemoteConfigService {
     boolean selectRegisterEnabled();
 
     /**
+     * 获取指定租户的注册开关。
+     */
+    default boolean selectRegisterEnabled(String tenantId) {
+        return selectRegisterEnabled();
+    }
+
+    /**
      * 根据参数 key 获取参数值
      *
      * @param configKey 参数 key

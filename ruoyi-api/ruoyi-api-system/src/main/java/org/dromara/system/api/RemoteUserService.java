@@ -27,12 +27,32 @@ public interface RemoteUserService {
     LoginUser getUserInfo(String username) throws UserException;
 
     /**
+     * 通过用户名和租户编号查询用户信息。
+     *
+     * <p>保留旧方法以兼容已有消费者；多租户登录入口应调用此方法。</p>
+     *
+     * @param username 用户名
+     * @param tenantId 租户编号
+     * @return 结果
+     */
+    default LoginUser getUserInfo(String username, String tenantId) throws UserException {
+        return getUserInfo(username);
+    }
+
+    /**
      * 通过用户id查询用户信息
      *
      * @param userId 用户id
      * @return 结果
      */
     LoginUser getUserInfo(Long userId) throws UserException;
+
+    /**
+     * 通过用户 id 和租户编号查询用户信息。
+     */
+    default LoginUser getUserInfo(Long userId, String tenantId) throws UserException {
+        return getUserInfo(userId);
+    }
 
     /**
      * 通过手机号查询用户信息
@@ -43,6 +63,13 @@ public interface RemoteUserService {
     LoginUser getUserInfoByPhoneNumber(String phoneNumber) throws UserException;
 
     /**
+     * 通过手机号和租户编号查询用户信息。
+     */
+    default LoginUser getUserInfoByPhoneNumber(String phoneNumber, String tenantId) throws UserException {
+        return getUserInfoByPhoneNumber(phoneNumber);
+    }
+
+    /**
      * 通过邮箱查询用户信息
      *
      * @param email 邮箱
@@ -51,12 +78,26 @@ public interface RemoteUserService {
     LoginUser getUserInfoByEmail(String email) throws UserException;
 
     /**
+     * 通过邮箱和租户编号查询用户信息。
+     */
+    default LoginUser getUserInfoByEmail(String email, String tenantId) throws UserException {
+        return getUserInfoByEmail(email);
+    }
+
+    /**
      * 通过openid查询用户信息
      *
      * @param openid openid
      * @return 结果
      */
     XcxLoginUser getUserInfoByOpenid(String openid) throws UserException;
+
+    /**
+     * 通过 openid 和租户编号查询用户信息。
+     */
+    default XcxLoginUser getUserInfoByOpenid(String openid, String tenantId) throws UserException {
+        return getUserInfoByOpenid(openid);
+    }
 
     /**
      * 注册用户信息
@@ -113,6 +154,13 @@ public interface RemoteUserService {
      * @param ip     IP地址
      */
     void recordLoginInfo(Long userId, String ip);
+
+    /**
+     * 按租户记录登录信息。
+     */
+    default void recordLoginInfo(Long userId, String ip, String tenantId) {
+        recordLoginInfo(userId, ip);
+    }
 
     /**
      * 通过用户ID查询用户列表

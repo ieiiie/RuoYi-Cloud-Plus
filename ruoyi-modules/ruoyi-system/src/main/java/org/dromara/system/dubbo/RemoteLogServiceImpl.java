@@ -3,6 +3,7 @@ package org.dromara.system.dubbo;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.dromara.common.core.utils.MapstructUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteLogService;
 import org.dromara.system.api.domain.bo.RemoteLoginInfoBo;
 import org.dromara.system.api.domain.bo.RemoteOperLogBo;
@@ -34,8 +35,10 @@ public class RemoteLogServiceImpl implements RemoteLogService {
     @Async
     @Override
     public void saveLog(RemoteOperLogBo remoteOperLogBo) {
-        SysOperLogBo sysOperLogBo = MapstructUtils.convert(remoteOperLogBo, SysOperLogBo.class);
-        operLogService.insertOperlog(sysOperLogBo);
+        TenantHelper.dynamic(remoteOperLogBo.getTenantId(), () -> {
+            SysOperLogBo sysOperLogBo = MapstructUtils.convert(remoteOperLogBo, SysOperLogBo.class);
+            operLogService.insertOperlog(sysOperLogBo);
+        });
     }
 
     /**
@@ -46,7 +49,9 @@ public class RemoteLogServiceImpl implements RemoteLogService {
     @Async
     @Override
     public void saveLoginInfo(RemoteLoginInfoBo remoteLoginInfoBo) {
-        SysLoginInfoBo sysLoginInfoBo = MapstructUtils.convert(remoteLoginInfoBo, SysLoginInfoBo.class);
-        loginInfoService.insertLoginInfo(sysLoginInfoBo);
+        TenantHelper.dynamic(remoteLoginInfoBo.getTenantId(), () -> {
+            SysLoginInfoBo sysLoginInfoBo = MapstructUtils.convert(remoteLoginInfoBo, SysLoginInfoBo.class);
+            loginInfoService.insertLoginInfo(sysLoginInfoBo);
+        });
     }
 }

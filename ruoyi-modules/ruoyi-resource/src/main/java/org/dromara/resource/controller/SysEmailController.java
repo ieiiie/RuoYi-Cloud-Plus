@@ -15,9 +15,11 @@ import org.dromara.common.mail.config.properties.MailProperties;
 import org.dromara.common.mail.core.MailBuilder;
 import org.dromara.common.redis.annotation.RateLimiter;
 import org.dromara.common.redis.utils.RedisUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.common.web.core.BaseController;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,14 +45,16 @@ public class SysEmailController extends BaseController {
      * @param email 邮箱
      */
     @GetMapping("/code")
-    public R<Void> emailCode(@NotBlank(message = "{user.email.not.blank}") String email) {
+    public R<Void> emailCode(@NotBlank(message = "{user.email.not.blank}") String email,
+                             @RequestParam(required = false) String tenantId) {
         if (!mailProperties.getEnabled()) {
             return R.fail("当前系统没有开启邮箱功能！");
         }
         if (!RegexValidator.isEmail(email)) {
             return R.fail("请输入正确的邮箱地址！");
         }
-        SpringUtils.getAopProxy(this).emailCodeImpl(email);
+        TenantHelper.checkTenantId(tenantId);
+        TenantHelper.dynamic(tenantId, () -> SpringUtils.getAopProxy(this).emailCodeImpl(email));
         return R.ok();
     }
 

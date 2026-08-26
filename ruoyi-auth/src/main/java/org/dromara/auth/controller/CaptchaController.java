@@ -17,6 +17,7 @@ import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.redis.annotation.RateLimiter;
 import org.dromara.common.redis.enums.LimitType;
 import org.dromara.common.redis.utils.RedisUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -44,14 +45,15 @@ public class CaptchaController {
      * 生成验证码
      */
     @GetMapping("/code")
-    public R<CaptchaVo> getCode() {
+    public R<CaptchaVo> getCode(@org.springframework.web.bind.annotation.RequestParam(required = false) String tenantId) {
         CaptchaVo captchaVo = new CaptchaVo();
         boolean captchaEnabled = captchaProperties.getEnabled();
         if (!captchaEnabled) {
             captchaVo.setCaptchaEnabled(false);
             return R.ok(captchaVo);
         }
-        return R.ok(SpringUtils.getAopProxy(this).getCodeImpl());
+        TenantHelper.checkTenantId(tenantId);
+        return R.ok(TenantHelper.dynamic(tenantId, () -> SpringUtils.getAopProxy(this).getCodeImpl()));
     }
 
     /**

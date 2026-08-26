@@ -46,6 +46,7 @@ public class UserLoginSuccessListener {
         UserAgent userAgent = UserAgentUtil.parse(ServletUtils.getRequest().getHeader("User-Agent"));
         String ip = ServletUtils.getClientIP();
         String username = (String) loginParameter.getExtra(LoginHelper.USER_NAME_KEY);
+        String tenantId = (String) loginParameter.getExtra(LoginHelper.TENANT_KEY);
         String tokenValue = event.tokenValue();
 
         SysUserOnline userOnline = new SysUserOnline();
@@ -69,9 +70,10 @@ public class UserLoginSuccessListener {
         loginInfoEvent.setUsername(username);
         loginInfoEvent.setStatus(Constants.LOGIN_SUCCESS);
         loginInfoEvent.setMessage(MessageUtils.message("user.login.success"));
+        loginInfoEvent.setTenantId(tenantId);
         SpringUtils.context().publishEvent(loginInfoEvent);
 
-        remoteUserService.recordLoginInfo((Long) loginParameter.getExtra(LoginHelper.USER_KEY), ip);
+        remoteUserService.recordLoginInfo((Long) loginParameter.getExtra(LoginHelper.USER_KEY), ip, tenantId);
         log.info("user doLogin, userId:{}, token:***{}", event.loginId(), StringUtils.right(tokenValue, 8));
     }
 

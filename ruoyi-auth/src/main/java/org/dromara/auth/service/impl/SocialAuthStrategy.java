@@ -17,6 +17,7 @@ import org.dromara.common.json.utils.JsonUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.dromara.common.social.config.properties.SocialProperties;
 import org.dromara.common.social.utils.SocialUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteSocialService;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.vo.RemoteClientVo;
@@ -60,25 +61,29 @@ public class SocialAuthStrategy implements IAuthStrategy {
             throw new ServiceException(response.getMsg());
         }
         AuthUser authUserData = response.getData();
+        String tenantId = loginBody.getTenantId();
+        TenantHelper.checkTenantId(tenantId);
+        return TenantHelper.dynamic(tenantId, () -> {
+            List<RemoteSocialVo> list = remoteSocialService.selectByAuthId(
+                authUserData.getSource() + authUserData.getUuid(), tenantId);
+            if (CollUtil.isEmpty(list)) {
+                throw new ServiceException("你还没有绑定第三方账号，绑定后才可以登录！");
+            }
+            RemoteSocialVo socialVo = list.getFirst();
 
-        List<RemoteSocialVo> list = remoteSocialService.selectByAuthId(authUserData.getSource() + authUserData.getUuid());
-        if (CollUtil.isEmpty(list)) {
-            throw new ServiceException("你还没有绑定第三方账号，绑定后才可以登录！");
-        }
-        RemoteSocialVo socialVo = list.getFirst();
+            LoginUser loginUser = remoteUserService.getUserInfo(socialVo.getUserId(), tenantId);
+            loginUser.setClientKey(client.getClientKey());
+            loginUser.setDeviceType(client.getDeviceType());
+            SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
+            // 生成token
+            LoginHelper.login(loginUser, model);
 
-        LoginUser loginUser = remoteUserService.getUserInfo(socialVo.getUserId());
-        loginUser.setClientKey(client.getClientKey());
-        loginUser.setDeviceType(client.getDeviceType());
-        SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
-        // 生成token
-        LoginHelper.login(loginUser, model);
-
-        LoginVo loginVo = new LoginVo();
-        loginVo.setAccessToken(StpUtil.getTokenValue());
-        loginVo.setExpireIn(StpUtil.getTokenTimeout());
-        loginVo.setClientId(client.getClientId());
-        return loginVo;
+            LoginVo loginVo = new LoginVo();
+            loginVo.setAccessToken(StpUtil.getTokenValue());
+            loginVo.setExpireIn(StpUtil.getTokenTimeout());
+            loginVo.setClientId(client.getClientId());
+            return loginVo;
+        });
     }
 
 }

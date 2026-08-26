@@ -20,6 +20,7 @@ import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.utils.ValidatorUtils;
 import org.dromara.common.json.utils.JsonUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.vo.RemoteClientVo;
 import org.dromara.system.api.model.XcxLoginUser;
@@ -44,6 +45,8 @@ public class XcxAuthStrategy implements IAuthStrategy {
     public LoginVo login(String body, RemoteClientVo client) {
         XcxLoginBody loginBody = JsonUtils.parseObject(body, XcxLoginBody.class);
         ValidatorUtils.validate(loginBody);
+        String tenantId = loginBody.getTenantId();
+        TenantHelper.checkTenantId(tenantId);
         // xcxCode 为 小程序调用 wx.login 授权后获取
         String xcxCode = loginBody.getXcxCode();
         // 多个小程序识别使用
@@ -65,21 +68,23 @@ public class XcxAuthStrategy implements IAuthStrategy {
         } else {
             throw new ServiceException(resp.getMsg());
         }
-        // todo getUserInfoByOpenid 方法内部查询逻辑需要自行根据业务实现
-        XcxLoginUser loginUser = remoteUserService.getUserInfoByOpenid(openid);
-        loginUser.setClientKey(client.getClientKey());
-        loginUser.setDeviceType(client.getDeviceType());
+        return TenantHelper.dynamic(tenantId, () -> {
+            // todo getUserInfoByOpenid 方法内部查询逻辑需要自行根据业务实现
+            XcxLoginUser loginUser = remoteUserService.getUserInfoByOpenid(openid, tenantId);
+            loginUser.setClientKey(client.getClientKey());
+            loginUser.setDeviceType(client.getDeviceType());
 
-        SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
-        // 生成token
-        LoginHelper.login(loginUser, model);
+            SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
+            // 生成token
+            LoginHelper.login(loginUser, model);
 
-        LoginVo loginVo = new LoginVo();
-        loginVo.setAccessToken(StpUtil.getTokenValue());
-        loginVo.setExpireIn(StpUtil.getTokenTimeout());
-        loginVo.setClientId(client.getClientId());
-        loginVo.setOpenid(openid);
-        return loginVo;
+            LoginVo loginVo = new LoginVo();
+            loginVo.setAccessToken(StpUtil.getTokenValue());
+            loginVo.setExpireIn(StpUtil.getTokenTimeout());
+            loginVo.setClientId(client.getClientId());
+            loginVo.setOpenid(openid);
+            return loginVo;
+        });
     }
 
 }

@@ -8,15 +8,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.dromara.common.core.constant.Constants;
 import org.dromara.common.core.constant.GlobalConstants;
 import org.dromara.common.core.domain.R;
+import org.dromara.common.core.utils.SpringUtils;
 import org.dromara.common.core.utils.regex.RegexValidator;
 import org.dromara.common.redis.annotation.RateLimiter;
 import org.dromara.common.redis.utils.RedisUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.common.web.core.BaseController;
 import org.dromara.sms4j.api.SmsBlend;
 import org.dromara.sms4j.api.entity.SmsResponse;
 import org.dromara.sms4j.core.factory.SmsFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,12 +43,21 @@ public class SysSmsController extends BaseController {
      *
      * @param phoneNumber 用户手机号
      */
-    @RateLimiter(key = "#phoneNumber", time = 60, count = 1)
     @GetMapping("/code")
-    public R<Void> smsCaptcha(@NotBlank(message = "{user.phonenumber.not.blank}") String phoneNumber) {
+    public R<Void> smsCaptcha(@NotBlank(message = "{user.phonenumber.not.blank}") String phoneNumber,
+                              @RequestParam(required = false) String tenantId) {
         if (!RegexValidator.isMobile(phoneNumber)) {
             return R.fail("请输入正确的手机号！");
         }
+        TenantHelper.checkTenantId(tenantId);
+        return TenantHelper.dynamic(tenantId, () -> SpringUtils.getAopProxy(this).smsCaptchaImpl(phoneNumber));
+    }
+
+    /**
+     * 短信验证码发送实现。单独代理调用保证限流 Redis Key 带有租户前缀。
+     */
+    @RateLimiter(key = "#phoneNumber", time = 60, count = 1)
+    public R<Void> smsCaptchaImpl(String phoneNumber) {
         String key = GlobalConstants.CAPTCHA_CODE_KEY + phoneNumber;
         String code = RandomUtil.randomNumbers(4);
         // 验证码模板id 自行处理 (查数据库或写死均可)

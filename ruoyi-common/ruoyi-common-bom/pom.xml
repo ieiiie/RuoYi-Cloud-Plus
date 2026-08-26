@@ -89,6 +89,13 @@
                 <version>${revision}</version>
             </dependency>
 
+            <!-- 租户模块 -->
+            <dependency>
+                <groupId>org.dromara</groupId>
+                <artifactId>ruoyi-common-tenant</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
             <!-- RPC服务 -->
             <dependency>
                 <groupId>org.dromara</groupId>

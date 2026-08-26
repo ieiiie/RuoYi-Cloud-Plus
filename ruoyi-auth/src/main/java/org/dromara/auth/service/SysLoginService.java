@@ -29,6 +29,7 @@ import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.log.event.LoginInfoEvent;
 import org.dromara.common.redis.utils.RedisUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteSocialService;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.bo.RemoteSocialBo;
@@ -140,6 +141,7 @@ public class SysLoginService {
         remoteUserBo.setNickName(username);
         remoteUserBo.setPassword(BCrypt.hashpw(password));
         remoteUserBo.setUserType(userType);
+        remoteUserBo.setTenantId(registerBody.getTenantId());
 
         boolean regFlag = remoteUserService.registerUserInfo(remoteUserBo);
         if (!regFlag) {
@@ -183,6 +185,7 @@ public class SysLoginService {
         loginInfoEvent.setUsername(username);
         loginInfoEvent.setStatus(status);
         loginInfoEvent.setMessage(message);
+        loginInfoEvent.setTenantId(TenantHelper.getTenantId());
         SpringUtils.context().publishEvent(loginInfoEvent);
     }
 

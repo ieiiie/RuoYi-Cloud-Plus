@@ -73,6 +73,7 @@ public class LogEventListener {
         // 封装对象
         RemoteLoginInfoBo loginInfo = new RemoteLoginInfoBo();
         loginInfo.setUserName(loginInfoEvent.getUsername());
+        loginInfo.setTenantId(loginInfoEvent.getTenantId());
         if (ObjectUtil.isNotNull(clientVo)) {
             loginInfo.setClientKey(clientVo.getClientKey());
             loginInfo.setDeviceType(clientVo.getDeviceType());

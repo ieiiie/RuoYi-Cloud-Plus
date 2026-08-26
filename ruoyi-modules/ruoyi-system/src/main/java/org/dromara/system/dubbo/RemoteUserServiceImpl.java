@@ -15,6 +15,7 @@ import org.dromara.common.core.utils.StreamUtils;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.core.utils.ThreadUtils;
 import org.dromara.common.mybatis.helper.DataPermissionHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.bo.RemoteUserBo;
 import org.dromara.system.api.domain.vo.RemoteUserVo;
@@ -38,6 +39,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * 用户服务
@@ -55,6 +57,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
     private final ISysRoleService roleService;
     private final ISysDeptService deptService;
     private final ISysPostService postService;
+    private final ISysTenantService tenantService;
     private final SysUserMapper userMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final SysUserPostMapper userPostMapper;
@@ -67,6 +70,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public LoginUser getUserInfo(String username) throws UserException {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         SysUserVo sysUser = userMapper.lambda().eq(SysUser::getUserName, username).voOne();
         if (ObjectUtil.isNull(sysUser)) {
             throw new UserException("user.not.exists", username);
@@ -77,6 +81,11 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return buildLoginUser(sysUser);
     }
 
+    @Override
+    public LoginUser getUserInfo(String username, String tenantId) throws UserException {
+        return executeInTenant(tenantId, () -> getUserInfo(username));
+    }
+
     /**
      * 通过用户id查询用户信息
      *
@@ -85,6 +94,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public LoginUser getUserInfo(Long userId) throws UserException {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         SysUserVo sysUser = userMapper.selectVoById(userId);
         if (ObjectUtil.isNull(sysUser)) {
             throw new UserException("user.not.exists", "");
@@ -97,6 +107,11 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return buildLoginUser(sysUser);
     }
 
+    @Override
+    public LoginUser getUserInfo(Long userId, String tenantId) throws UserException {
+        return executeInTenant(tenantId, () -> getUserInfo(userId));
+    }
+
     /**
      * 通过手机号查询用户信息
      *
@@ -105,6 +120,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public LoginUser getUserInfoByPhoneNumber(String phoneNumber) throws UserException {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         SysUserVo sysUser = userMapper.lambda().eq(SysUser::getPhoneNumber, phoneNumber).voOne();
         if (ObjectUtil.isNull(sysUser)) {
             throw new UserException("user.not.exists", phoneNumber);
@@ -117,6 +133,11 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return buildLoginUser(sysUser);
     }
 
+    @Override
+    public LoginUser getUserInfoByPhoneNumber(String phoneNumber, String tenantId) throws UserException {
+        return executeInTenant(tenantId, () -> getUserInfoByPhoneNumber(phoneNumber));
+    }
+
     /**
      * 通过邮箱查询用户信息
      *
@@ -125,6 +146,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public LoginUser getUserInfoByEmail(String email) throws UserException {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         SysUserVo user = userMapper.lambda().eq(SysUser::getEmail, email).voOne();
         if (ObjectUtil.isNull(user)) {
             throw new UserException("user.not.exists", email);
@@ -137,6 +159,11 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return buildLoginUser(user);
     }
 
+    @Override
+    public LoginUser getUserInfoByEmail(String email, String tenantId) throws UserException {
+        return executeInTenant(tenantId, () -> getUserInfoByEmail(email));
+    }
+
     /**
      * 通过openid查询用户信息
      *
@@ -145,6 +172,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public XcxLoginUser getUserInfoByOpenid(String openid) throws UserException {
+        TenantHelper.checkTenantId(TenantHelper.getTenantId());
         // todo 自行实现 userService.selectUserByOpenid(openid);
         SysUser sysUser = new SysUser();
         if (ObjectUtil.isNull(sysUser)) {
@@ -164,6 +192,11 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return loginUser;
     }
 
+    @Override
+    public XcxLoginUser getUserInfoByOpenid(String openid, String tenantId) throws UserException {
+        return executeInTenant(tenantId, () -> getUserInfoByOpenid(openid));
+    }
+
     /**
      * 注册用户信息
      *
@@ -172,6 +205,10 @@ public class RemoteUserServiceImpl implements RemoteUserService {
      */
     @Override
     public Boolean registerUserInfo(RemoteUserBo remoteUserBo) throws UserException, ServiceException {
+        return executeInTenant(remoteUserBo.getTenantId(), () -> registerUserInfoInternal(remoteUserBo));
+    }
+
+    private Boolean registerUserInfoInternal(RemoteUserBo remoteUserBo) {
         SysUserBo sysUserBo = MapstructUtils.convert(remoteUserBo, SysUserBo.class);
         String username = sysUserBo.getUserName();
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser")))) {
@@ -248,6 +285,7 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         LoginUser loginUser = new LoginUser();
         Long userId = userVo.getUserId();
         loginUser.setUserId(userId);
+        loginUser.setTenantId(userVo.getTenantId());
         loginUser.setDeptId(userVo.getDeptId());
         loginUser.setUsername(userVo.getUserName());
         loginUser.setNickname(userVo.getNickName());
@@ -258,19 +296,21 @@ public class RemoteUserServiceImpl implements RemoteUserService {
             loginUser.setDeptName(deptOpt.map(SysDeptVo::getDeptName).orElse(StringUtils.EMPTY));
             loginUser.setDeptCategory(deptOpt.map(SysDeptVo::getDeptCategory).orElse(StringUtils.EMPTY));
         }
-        ThreadUtils.virtualSubmit(() -> {
-            loginUser.setMenuPermission(permissionService.getMenuPermission(userId));
-        }, () -> {
-            loginUser.setRolePermission(permissionService.getRolePermission(userId));
-        }, () -> {
-            List<SysRoleVo> roles = roleService.selectRolesByUserId(userId);
-            List<RoleDTO> roleDtos = BeanUtil.copyToList(roles, RoleDTO.class);
-            loginUser.setRoles(roleDtos);
-            loginUser.setDataScopeRoleMap(permissionService.getDataScopeRoleMap(roleDtos));
-        }, () -> {
-            List<SysPostVo> posts = postService.selectPostsByUserId(userId);
-            loginUser.setPosts(BeanUtil.copyToList(posts, PostDTO.class));
-        });
+        String tenantId = userVo.getTenantId();
+        ThreadUtils.virtualSubmit(() -> TenantHelper.dynamic(tenantId,
+            () -> loginUser.setMenuPermission(permissionService.getMenuPermission(userId))),
+            () -> TenantHelper.dynamic(tenantId,
+                () -> loginUser.setRolePermission(permissionService.getRolePermission(userId))),
+            () -> TenantHelper.dynamic(tenantId, () -> {
+                List<SysRoleVo> roles = roleService.selectRolesByUserId(userId);
+                List<RoleDTO> roleDtos = BeanUtil.copyToList(roles, RoleDTO.class);
+                loginUser.setRoles(roleDtos);
+                loginUser.setDataScopeRoleMap(permissionService.getDataScopeRoleMap(roleDtos));
+            }),
+            () -> TenantHelper.dynamic(tenantId, () -> {
+                List<SysPostVo> posts = postService.selectPostsByUserId(userId);
+                loginUser.setPosts(BeanUtil.copyToList(posts, PostDTO.class));
+            }));
         return loginUser;
     }
 
@@ -288,6 +328,23 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         sysUser.setLoginDate(LocalDateTime.now());
         sysUser.setUpdateBy(userId);
         DataPermissionHelper.ignore(() -> userMapper.updateById(sysUser));
+    }
+
+    @Override
+    public void recordLoginInfo(Long userId, String ip, String tenantId) {
+        executeInTenant(tenantId, () -> {
+            recordLoginInfo(userId, ip);
+            return null;
+        });
+    }
+
+    /**
+     * 在指定租户上下文中执行认证相关查询，避免匿名入口绕过行级隔离。
+     */
+    private <T> T executeInTenant(String tenantId, Supplier<T> action) {
+        TenantHelper.checkTenantId(tenantId);
+        tenantService.checkTenantAvailable(tenantId);
+        return TenantHelper.dynamic(tenantId, action);
     }
 
     /**

@@ -30,6 +30,11 @@ public class SysOperLogBo {
     private Long operId;
 
     /**
+     * 租户编号。
+     */
+    private String tenantId;
+
+    /**
      * 模块标题
      */
     private String title;

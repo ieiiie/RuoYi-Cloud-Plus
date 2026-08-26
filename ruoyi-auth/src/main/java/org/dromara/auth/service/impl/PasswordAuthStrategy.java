@@ -22,6 +22,7 @@ import org.dromara.common.core.utils.ValidatorUtils;
 import org.dromara.common.json.utils.JsonUtils;
 import org.dromara.common.redis.utils.RedisUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.vo.RemoteClientVo;
 import org.dromara.system.api.model.LoginUser;
@@ -52,24 +53,27 @@ public class PasswordAuthStrategy implements IAuthStrategy {
         String password = loginBody.getPassword();
         String code = loginBody.getCode();
         String uuid = loginBody.getUuid();
+        String tenantId = loginBody.getTenantId();
+        TenantHelper.checkTenantId(tenantId);
+        return TenantHelper.dynamic(tenantId, () -> {
+            // 验证码开关
+            if (captchaProperties.getEnabled()) {
+                validateCaptcha(username, code, uuid);
+            }
+            LoginUser loginUser = remoteUserService.getUserInfo(username, tenantId);
+            loginService.checkLogin(LoginType.PASSWORD, username, () -> !BCrypt.checkpw(password, loginUser.getPassword()));
+            loginUser.setClientKey(client.getClientKey());
+            loginUser.setDeviceType(client.getDeviceType());
+            SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
+            // 生成token
+            LoginHelper.login(loginUser, model);
 
-        // 验证码开关
-        if (captchaProperties.getEnabled()) {
-            validateCaptcha(username, code, uuid);
-        }
-        LoginUser loginUser = remoteUserService.getUserInfo(username);
-        loginService.checkLogin(LoginType.PASSWORD, username, () -> !BCrypt.checkpw(password, loginUser.getPassword()));
-        loginUser.setClientKey(client.getClientKey());
-        loginUser.setDeviceType(client.getDeviceType());
-        SaLoginParameter model = IAuthStrategy.buildLoginParameter(client);
-        // 生成token
-        LoginHelper.login(loginUser, model);
-
-        LoginVo loginVo = new LoginVo();
-        loginVo.setAccessToken(StpUtil.getTokenValue());
-        loginVo.setExpireIn(StpUtil.getTokenTimeout());
-        loginVo.setClientId(client.getClientId());
-        return loginVo;
+            LoginVo loginVo = new LoginVo();
+            loginVo.setAccessToken(StpUtil.getTokenValue());
+            loginVo.setExpireIn(StpUtil.getTokenTimeout());
+            loginVo.setClientId(client.getClientId());
+            return loginVo;
+        });
     }
 
     /**

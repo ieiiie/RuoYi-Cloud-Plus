@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.dromara.common.mybatis.core.domain.BaseEntity;
+import org.dromara.common.tenant.core.TenantEntity;
 
 /**
  * 字典类型表 sys_dict_type
@@ -15,7 +15,7 @@ import org.dromara.common.mybatis.core.domain.BaseEntity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_dict_type")
-public class SysDictType extends BaseEntity {
+public class SysDictType extends TenantEntity {
 
     /**
      * 字典主键

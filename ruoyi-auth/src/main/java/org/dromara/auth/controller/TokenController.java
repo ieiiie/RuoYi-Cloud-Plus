@@ -24,6 +24,7 @@ import org.dromara.common.core.utils.ValidatorUtils;
 import org.dromara.common.encrypt.annotation.ApiEncrypt;
 import org.dromara.common.json.utils.JsonUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.common.social.config.properties.SocialLoginConfigProperties;
 import org.dromara.common.social.config.properties.SocialProperties;
 import org.dromara.common.social.utils.SocialUtils;
@@ -92,8 +93,10 @@ public class TokenController {
         LoginVo loginVo = IAuthStrategy.login(body, clientVo, grantType);
 
         Long userId = LoginHelper.getUserId();
+        String tenantId = LoginHelper.getTenantId();
         scheduledExecutorService.schedule(() -> {
-            remoteMessageService.publishMessage(List.of(userId), DateUtils.getTodayHour(new Date()) + "好，欢迎登录 RuoYi-Cloud-Plus 后台管理系统");
+            TenantHelper.dynamic(tenantId, () -> remoteMessageService.publishMessage(
+                List.of(userId), DateUtils.getTodayHour(new Date()) + "好，欢迎登录 RuoYi-Cloud-Plus 后台管理系统"));
         }, 5, TimeUnit.SECONDS);
         return R.ok(loginVo);
     }
@@ -167,11 +170,13 @@ public class TokenController {
     @ApiEncrypt
     @PostMapping("register")
     public R<Void> register(@RequestBody RegisterBody registerBody) {
-        if (!remoteConfigService.selectRegisterEnabled()) {
+        String tenantId = registerBody.getTenantId();
+        TenantHelper.checkTenantId(tenantId);
+        if (!remoteConfigService.selectRegisterEnabled(tenantId)) {
             return R.fail("当前系统没有开启注册功能！");
         }
         // 用户注册
-        sysLoginService.register(registerBody);
+        TenantHelper.dynamic(tenantId, () -> sysLoginService.register(registerBody));
         return R.ok();
     }
 

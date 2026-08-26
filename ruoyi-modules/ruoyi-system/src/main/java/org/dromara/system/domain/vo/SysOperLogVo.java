@@ -34,6 +34,11 @@ public class SysOperLogVo implements Serializable {
     private Long operId;
 
     /**
+     * 租户编号。
+     */
+    private String tenantId;
+
+    /**
      * 模块标题
      */
     @ExcelProperty(value = "操作模块")

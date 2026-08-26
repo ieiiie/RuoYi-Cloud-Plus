@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.dromara.common.mybatis.core.domain.BaseEntity;
+import org.dromara.common.tenant.core.TenantEntity;
 
 /**
  * 岗位表 sys_post
@@ -16,7 +16,7 @@ import org.dromara.common.mybatis.core.domain.BaseEntity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_post")
-public class SysPost extends BaseEntity {
+public class SysPost extends TenantEntity {
 
     /**
      * 岗位序号

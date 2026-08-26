@@ -123,6 +123,24 @@ redisson:
     # 发布和订阅连接池大小
     subscriptionConnectionPoolSize: 50
 
+# 多租户配置。完成 SQL 迁移并创建租户后，再将 enable 改为 true。
+# 关闭时不会改写业务 SQL，可用于平滑升级现有单租户数据。
+tenant:
+  enable: false
+  excludes:
+    # 平台全局数据与关联表，不参与 tenant_id 行级过滤。
+    - sys_menu
+    - sys_tenant
+    - sys_tenant_package
+    - sys_role_dept
+    - sys_role_menu
+    - sys_user_post
+    - sys_user_role
+    - sys_client
+    - sys_oss_config
+    # Seata 的事务回滚记录不含 tenant_id，必须排除。
+    - undo_log
+
 # 分布式锁 lock4j 全局配置
 lock4j:
   # 获取分布式锁超时时间，默认为 3000 毫秒

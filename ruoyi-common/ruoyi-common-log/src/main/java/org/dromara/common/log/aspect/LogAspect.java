@@ -99,6 +99,7 @@ public class LogAspect {
             operLog.setClientKey(limit(request.getHeader(LoginHelper.CLIENT_KEY), MAX_CLIENT_KEY_LENGTH));
             LoginUser loginUser = LoginHelper.getLoginUser();
             if (ObjectUtil.isNotNull(loginUser)) {
+                operLog.setTenantId(loginUser.getTenantId());
                 operLog.setOperName(loginUser.getUsername());
                 operLog.setUserId(loginUser.getUserId());
                 operLog.setDeptId(loginUser.getDeptId());

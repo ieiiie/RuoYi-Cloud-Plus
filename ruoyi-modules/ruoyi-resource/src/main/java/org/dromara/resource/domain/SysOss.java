@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.dromara.common.mybatis.core.domain.BaseEntity;
+import org.dromara.common.tenant.core.TenantEntity;
 
 /**
  * OSS对象存储对象
@@ -14,7 +14,7 @@ import org.dromara.common.mybatis.core.domain.BaseEntity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_oss")
-public class SysOss extends BaseEntity {
+public class SysOss extends TenantEntity {
 
     /**
      * 对象存储主键

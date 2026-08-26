@@ -28,6 +28,11 @@ public class SysOperLog implements Serializable {
     private Long operId;
 
     /**
+     * 租户编号。
+     */
+    private String tenantId;
+
+    /**
      * 操作模块
      */
     private String title;

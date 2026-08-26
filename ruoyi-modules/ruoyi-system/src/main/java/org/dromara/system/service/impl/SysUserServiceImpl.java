@@ -17,6 +17,7 @@ import org.dromara.common.core.utils.*;
 import org.dromara.common.mybatis.core.page.PageQuery;
 import org.dromara.common.mybatis.core.query.QueryBuilder;
 import org.dromara.common.satoken.utils.LoginHelper;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.domain.SysUser;
 import org.dromara.system.domain.SysUserPost;
 import org.dromara.system.domain.SysUserRole;
@@ -27,6 +28,7 @@ import org.dromara.system.domain.vo.SysUserExportVo;
 import org.dromara.system.domain.vo.SysUserVo;
 import org.dromara.system.mapper.*;
 import org.dromara.system.service.ISysUserService;
+import org.dromara.system.service.ISysTenantService;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -50,6 +52,7 @@ public class SysUserServiceImpl implements ISysUserService {
     private final SysPostMapper postMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final SysUserPostMapper userPostMapper;
+    private final ISysTenantService tenantService;
 
     @Override
     public PageResult<SysUserVo> selectPageUserList(SysUserBo user, PageQuery pageQuery) {
@@ -284,6 +287,7 @@ public class SysUserServiceImpl implements ISysUserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int insertUser(SysUserBo user) {
+        tenantService.checkAccountBalance(TenantHelper.getTenantId());
         SysUser sysUser = MapstructUtils.convert(user, SysUser.class);
         // 新增用户信息
         int rows = userMapper.insert(sysUser);
@@ -303,6 +307,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public boolean registerUser(SysUserBo user) {
+        tenantService.checkAccountBalance(TenantHelper.getTenantId());
         user.setCreateBy(0L);
         user.setUpdateBy(0L);
         SysUser sysUser = MapstructUtils.convert(user, SysUser.class);

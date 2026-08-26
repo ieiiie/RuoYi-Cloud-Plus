@@ -4,6 +4,7 @@ import cn.hutool.core.lang.Dict;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.dromara.common.json.utils.JsonUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteConfigService;
 import org.dromara.system.service.ISysConfigService;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,12 @@ public class RemoteConfigServiceImpl implements RemoteConfigService {
     @Override
     public boolean selectRegisterEnabled() {
         return configService.selectRegisterEnabled();
+    }
+
+    @Override
+    public boolean selectRegisterEnabled(String tenantId) {
+        TenantHelper.checkTenantId(tenantId);
+        return TenantHelper.dynamic(tenantId, configService::selectRegisterEnabled);
     }
 
     @Override

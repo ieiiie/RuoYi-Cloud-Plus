@@ -23,6 +23,11 @@ public class LoginInfoEvent implements Serializable {
     private String username;
 
     /**
+     * 租户编号。
+     */
+    private String tenantId;
+
+    /**
      * 登录状态 0成功 1失败
      */
     private String status;

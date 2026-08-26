@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.dromara.common.mybatis.core.domain.BaseEntity;
+import org.dromara.common.tenant.core.TenantEntity;
 
 /**
  * 消息记录表 sys_message
@@ -14,7 +14,7 @@ import org.dromara.common.mybatis.core.domain.BaseEntity;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_message")
-public class SysMessage extends BaseEntity {
+public class SysMessage extends TenantEntity {
 
     @TableId(value = "message_id")
     private Long messageId;

@@ -21,6 +21,13 @@ public interface RemoteSocialService {
     List<RemoteSocialVo> selectByAuthId(String authId);
 
     /**
+     * 根据 authId 和租户编号查询用户授权信息。
+     */
+    default List<RemoteSocialVo> selectByAuthId(String authId, String tenantId) {
+        return selectByAuthId(authId);
+    }
+
+    /**
      * 查询列表
      *
      * @param bo 社会化关系业务对象
