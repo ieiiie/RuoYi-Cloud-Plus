@@ -74,8 +74,11 @@ public class SysLoginService {
         // 第三方用户信息
         RemoteSocialBo bo = BeanUtil.toBean(authUserData, RemoteSocialBo.class);
         BeanUtil.copyProperties(authUserData.getToken(), bo);
-        Long userId = LoginHelper.getUserId();
-        bo.setUserId(userId);
+        Long globalUserId = LoginHelper.getGlobalUserId();
+        if (ObjectUtil.isNull(globalUserId)) {
+            throw new ServiceException("当前租户成员未关联全局账号，不能绑定第三方账号");
+        }
+        bo.setGlobalUserId(globalUserId);
         bo.setAuthId(authId);
         bo.setOpenId(authUserData.getUuid());
         bo.setUserName(authUserData.getUsername());
@@ -86,7 +89,7 @@ public class SysLoginService {
         }
         // 查询是否已经绑定用户
         RemoteSocialBo params = new RemoteSocialBo();
-        params.setUserId(userId);
+        params.setGlobalUserId(globalUserId);
         params.setSource(bo.getSource());
         List<RemoteSocialVo> list = remoteSocialService.queryList(params);
         if (CollUtil.isEmpty(list)) {

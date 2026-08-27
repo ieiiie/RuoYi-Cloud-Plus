@@ -1,0 +1,11 @@
+# 本地认证、系统、网关服务统一使用 BellSoft Java 21 CDS 运行时。
+FROM bellsoft/liberica-openjdk-rocky:21.0.12-cds
+
+ARG JAR_FILE
+
+WORKDIR /app
+
+# 构建时由 --build-arg JAR_FILE 指向待运行的 Spring Boot Jar。
+COPY ${JAR_FILE} /app/app.jar
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

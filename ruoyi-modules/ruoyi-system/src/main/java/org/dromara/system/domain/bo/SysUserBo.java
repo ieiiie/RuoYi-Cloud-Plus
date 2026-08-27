@@ -40,7 +40,7 @@ public class SysUserBo implements Serializable {
     private Long deptId;
 
     /**
-     * 用户账号
+     * 全局用户账号
      */
     @Xss(message = "用户账号不能包含脚本字符")
     @NotBlank(message = "用户账号不能为空")
@@ -68,7 +68,7 @@ public class SysUserBo implements Serializable {
     private String email;
 
     /**
-     * 手机号码
+     * 全局手机号码
      */
     private String phoneNumber;
 
@@ -83,7 +83,7 @@ public class SysUserBo implements Serializable {
     private Long avatar;
 
     /**
-     * 密码
+     * 全局账号密码（仅用于新增或重置）
      */
     private String password;
 

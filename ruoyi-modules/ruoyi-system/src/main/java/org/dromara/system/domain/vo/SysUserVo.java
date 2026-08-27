@@ -1,7 +1,5 @@
 package org.dromara.system.domain.vo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.github.linpeilie.annotations.AutoMapper;
 import lombok.Data;
 import org.dromara.common.sensitive.annotation.Sensitive;
@@ -34,6 +32,11 @@ public class SysUserVo implements Serializable {
     private Long userId;
 
     /**
+     * 全局账号ID。
+     */
+    private Long globalUserId;
+
+    /**
      * 租户编号。
      */
     private String tenantId;
@@ -44,7 +47,7 @@ public class SysUserVo implements Serializable {
     private Long deptId;
 
     /**
-     * 用户账号
+     * 全局用户账号
      */
     private String userName;
 
@@ -65,7 +68,7 @@ public class SysUserVo implements Serializable {
     private String email;
 
     /**
-     * 手机号码
+     * 全局手机号码
      */
     @Sensitive(strategy = SensitiveStrategy.PHONE, perms = "system:user:edit")
     private String phoneNumber;
@@ -85,13 +88,6 @@ public class SysUserVo implements Serializable {
      */
     @Translation(type = TransConstant.OSS_ID_TO_URL, mapper = "avatar")
     private String avatarUrl;
-
-    /**
-     * 密码
-     */
-    @JsonIgnore
-    @JsonProperty
-    private String password;
 
     /**
      * 账号状态（0正常 1停用）

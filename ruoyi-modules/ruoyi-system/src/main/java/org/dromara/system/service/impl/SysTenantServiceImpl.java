@@ -18,8 +18,7 @@ import org.dromara.common.mybatis.core.page.PageQuery;
 import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.domain.SysConfig;
 import org.dromara.system.domain.SysDept;
-import org.dromara.system.domain.SysDictData;
-import org.dromara.system.domain.SysDictType;
+import org.dromara.system.domain.SysGlobalUser;
 import org.dromara.system.domain.SysRole;
 import org.dromara.system.domain.SysRoleDept;
 import org.dromara.system.domain.SysRoleMenu;
@@ -31,8 +30,6 @@ import org.dromara.system.domain.bo.SysTenantBo;
 import org.dromara.system.domain.vo.SysTenantVo;
 import org.dromara.system.mapper.SysConfigMapper;
 import org.dromara.system.mapper.SysDeptMapper;
-import org.dromara.system.mapper.SysDictDataMapper;
-import org.dromara.system.mapper.SysDictTypeMapper;
 import org.dromara.system.mapper.SysRoleDeptMapper;
 import org.dromara.system.mapper.SysRoleMapper;
 import org.dromara.system.mapper.SysRoleMenuMapper;
@@ -41,6 +38,7 @@ import org.dromara.system.mapper.SysTenantPackageMapper;
 import org.dromara.system.mapper.SysUserMapper;
 import org.dromara.system.mapper.SysUserRoleMapper;
 import org.dromara.system.service.ISysTenantService;
+import org.dromara.system.service.ISysGlobalUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +53,8 @@ import java.util.Set;
  * 租户服务实现。
  *
  * <p>创建租户是一段跨多张表的初始化事务：先保存平台租户主数据，再在新租户
- * 上下文中创建根部门、租户管理员和角色，最后复制默认租户的字典与参数配置。
- * 这样所有业务表始终由 MyBatis-Plus 的行级租户拦截器写入正确的 tenant_id。</p>
+ * 上下文中创建根部门、租户管理员和角色，最后复制默认租户的参数配置。
+ * 字典属于平台全局数据，不会在创建租户时复制。</p>
  *
  * @author Lion Li
  */
@@ -72,9 +70,8 @@ public class SysTenantServiceImpl implements ISysTenantService {
     private final SysRoleMenuMapper roleMenuMapper;
     private final SysRoleDeptMapper roleDeptMapper;
     private final SysUserRoleMapper userRoleMapper;
-    private final SysDictTypeMapper dictTypeMapper;
-    private final SysDictDataMapper dictDataMapper;
     private final SysConfigMapper configMapper;
+    private final ISysGlobalUserService globalUserService;
 
     @Override
     public SysTenantVo queryById(Long id) {
@@ -121,7 +118,7 @@ public class SysTenantServiceImpl implements ISysTenantService {
             Long deptId = createTenantRootDept(tenantId, bo);
             bindRoleDept(roleId, deptId);
             createTenantAdminUser(tenantId, bo, deptId, roleId);
-            copyDefaultData(tenantId);
+            copyDefaultConfig(tenantId);
         });
         return true;
     }
@@ -333,12 +330,17 @@ public class SysTenantServiceImpl implements ISysTenantService {
     private void createTenantAdminUser(String tenantId, SysTenantBo bo, Long deptId, Long roleId) {
         SysUser user = new SysUser();
         user.setTenantId(tenantId);
-        user.setUserName(bo.getUsername());
-        user.setNickName(bo.getContactUserName());
-        user.setPassword(BCrypt.hashpw(bo.getPassword()));
         user.setDeptId(deptId);
-        user.setPhoneNumber(bo.getContactPhone());
         user.setStatus(SystemConstants.NORMAL);
+
+        // 租户管理员的认证资料只写入全局账号表，本地成员只保存租户关系和权限属性。
+        SysGlobalUser candidate = new SysGlobalUser();
+        candidate.setUserName(bo.getUsername());
+        candidate.setNickName(bo.getContactUserName());
+        candidate.setPhoneNumber(bo.getContactPhone());
+        candidate.setPassword(BCrypt.hashpw(bo.getPassword()));
+        SysGlobalUser globalUser = globalUserService.resolveOrCreate(candidate);
+        globalUserService.applyToTenantUser(globalUser, user);
         if (userMapper.insert(user) <= 0) {
             throw new ServiceException("创建租户管理员失败");
         }
@@ -354,24 +356,12 @@ public class SysTenantServiceImpl implements ISysTenantService {
         userRoleMapper.insert(userRole);
     }
 
-    private void copyDefaultData(String tenantId) {
-        List<SysDictType> dictTypes = TenantHelper.dynamic(TenantConstants.DEFAULT_TENANT_ID,
-            () -> dictTypeMapper.lambda().list());
-        List<SysDictData> dictData = TenantHelper.dynamic(TenantConstants.DEFAULT_TENANT_ID,
-            () -> dictDataMapper.lambda().list());
+    private void copyDefaultConfig(String tenantId) {
         List<SysConfig> configs = TenantHelper.dynamic(TenantConstants.DEFAULT_TENANT_ID,
             () -> configMapper.lambda().list());
 
         TenantHelper.dynamic(tenantId, () -> {
-            dictTypes.forEach(item -> resetDictTypeForTenant(item, tenantId));
-            dictData.forEach(item -> resetDictDataForTenant(item, tenantId));
             configs.forEach(item -> resetConfigForTenant(item, tenantId));
-            if (CollUtil.isNotEmpty(dictTypes)) {
-                dictTypeMapper.insertBatch(dictTypes);
-            }
-            if (CollUtil.isNotEmpty(dictData)) {
-                dictDataMapper.insertBatch(dictData);
-            }
             if (CollUtil.isNotEmpty(configs)) {
                 configMapper.insertBatch(configs);
             }
@@ -398,18 +388,6 @@ public class SysTenantServiceImpl implements ISysTenantService {
             return List.of();
         }
         return StringUtils.splitTo(menuIds, Convert::toLong);
-    }
-
-    private void resetDictTypeForTenant(SysDictType item, String tenantId) {
-        item.setDictId(null);
-        item.setTenantId(tenantId);
-        clearAuditFields(item);
-    }
-
-    private void resetDictDataForTenant(SysDictData item, String tenantId) {
-        item.setDictCode(null);
-        item.setTenantId(tenantId);
-        clearAuditFields(item);
     }
 
     private void resetConfigForTenant(SysConfig item, String tenantId) {

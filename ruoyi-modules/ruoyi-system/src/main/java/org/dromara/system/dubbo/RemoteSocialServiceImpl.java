@@ -1,21 +1,25 @@
 package org.dromara.system.dubbo;
 
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjectUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.dromara.common.core.utils.MapstructUtils;
+import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteSocialService;
 import org.dromara.system.api.domain.bo.RemoteSocialBo;
 import org.dromara.system.api.domain.vo.RemoteSocialVo;
-import org.dromara.system.domain.bo.SysSocialBo;
-import org.dromara.system.domain.vo.SysSocialVo;
-import org.dromara.system.service.ISysSocialService;
+import org.dromara.system.domain.SysGlobalSocial;
+import org.dromara.system.mapper.SysGlobalSocialMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 /**
- * 社会化关系服务
+ * 全局第三方账号绑定服务。
+ *
+ * <p>绑定不再依赖当前租户的 {@code sys_user}，这样社交和小程序认证可先定位
+ * 全局账号，再由用户服务选择当前登录租户。</p>
  *
  * @author Michelle.Chung
  */
@@ -24,68 +28,47 @@ import java.util.List;
 @DubboService
 public class RemoteSocialServiceImpl implements RemoteSocialService {
 
-    private final ISysSocialService sysSocialService;
+    private final SysGlobalSocialMapper globalSocialMapper;
 
-    /**
-     * 根据 authId 查询用户授权信息
-     *
-     * @param authId 认证id
-     * @return 授权信息
-     */
     @Override
     public List<RemoteSocialVo> selectByAuthId(String authId) {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        List<SysSocialVo> list = sysSocialService.selectByAuthId(authId);
-        return MapstructUtils.convert(list, RemoteSocialVo.class);
+        List<SysGlobalSocial> list = TenantHelper.ignore(() -> globalSocialMapper.lambda()
+            .eq(SysGlobalSocial::getAuthId, authId)
+            .list());
+        return BeanUtil.copyToList(list, RemoteSocialVo.class);
     }
 
-    @Override
-    public List<RemoteSocialVo> selectByAuthId(String authId, String tenantId) {
-        TenantHelper.checkTenantId(tenantId);
-        return TenantHelper.dynamic(tenantId, () -> selectByAuthId(authId));
-    }
-
-    /**
-     * 查询列表
-     *
-     * @param bo 社会化关系业务对象
-     */
     @Override
     public List<RemoteSocialVo> queryList(RemoteSocialBo bo) {
-        SysSocialBo params = MapstructUtils.convert(bo, SysSocialBo.class);
-        List<SysSocialVo> list = sysSocialService.queryList(params);
-        return MapstructUtils.convert(list, RemoteSocialVo.class);
+        List<SysGlobalSocial> list = TenantHelper.ignore(() -> globalSocialMapper.lambda()
+            .eqIfPresent(SysGlobalSocial::getGlobalUserId, bo.getGlobalUserId())
+            .eqIfPresent(SysGlobalSocial::getAuthId, bo.getAuthId())
+            .eqIfPresent(SysGlobalSocial::getSource, bo.getSource())
+            .eqIfPresent(SysGlobalSocial::getOpenId, bo.getOpenId())
+            .list());
+        return BeanUtil.copyToList(list, RemoteSocialVo.class);
     }
 
-    /**
-     * 保存社会化关系
-     *
-     * @param bo 社会化关系业务对象
-     */
     @Override
     public void insertByBo(RemoteSocialBo bo) {
-        sysSocialService.insertByBo(MapstructUtils.convert(bo, SysSocialBo.class));
+        if (ObjectUtil.isNull(bo.getGlobalUserId())) {
+            throw new ServiceException("全局账号ID不能为空");
+        }
+        SysGlobalSocial social = BeanUtil.toBean(bo, SysGlobalSocial.class);
+        TenantHelper.ignore(() -> globalSocialMapper.insert(social));
     }
 
-    /**
-     * 更新社会化关系
-     *
-     * @param bo 社会化关系业务对象
-     */
     @Override
     public void updateByBo(RemoteSocialBo bo) {
-        sysSocialService.updateByBo(MapstructUtils.convert(bo, SysSocialBo.class));
+        if (ObjectUtil.isNull(bo.getId()) || ObjectUtil.isNull(bo.getGlobalUserId())) {
+            throw new ServiceException("第三方绑定信息不完整");
+        }
+        SysGlobalSocial social = BeanUtil.toBean(bo, SysGlobalSocial.class);
+        TenantHelper.ignore(() -> globalSocialMapper.updateById(social));
     }
 
-    /**
-     * 删除社会化关系
-     *
-     * @param socialId 社会化关系ID
-     * @return 结果
-     */
     @Override
     public Boolean deleteWithValidById(Long socialId) {
-        return sysSocialService.deleteWithValidById(socialId);
+        return TenantHelper.ignore(() -> globalSocialMapper.deleteBindingById(socialId) > 0);
     }
-
 }

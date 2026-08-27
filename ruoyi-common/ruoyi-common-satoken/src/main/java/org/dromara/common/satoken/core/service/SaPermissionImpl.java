@@ -50,7 +50,9 @@ public class SaPermissionImpl implements StpInterface {
                                                Function<LoginUser, Collection<String>> localPermissionExtractor,
                                                BiFunction<PermissionService, Long, Collection<String>> remotePermissionExtractor) {
         LoginUser loginUser = LoginHelper.getLoginUser();
-        if (ObjectUtil.isNull(loginUser) || !loginUser.getLoginId().equals(loginId)) {
+        // 登录 ID 在首次登录时固定。租户切换仅替换当前 token session 内的
+        // LoginUser，因此不能再以初始登录 ID 判断会话身份。
+        if (ObjectUtil.isNull(loginUser)) {
             PermissionService permissionService = getPermissionService();
             if (ObjectUtil.isNotNull(permissionService)) {
                 return new ArrayList<>(remotePermissionExtractor.apply(permissionService, resolveUserId(loginId)));

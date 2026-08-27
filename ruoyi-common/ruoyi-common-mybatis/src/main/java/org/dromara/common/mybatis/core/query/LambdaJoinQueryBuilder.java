@@ -554,6 +554,25 @@ public final class LambdaJoinQueryBuilder<T> {
     }
 
     /**
+     * 添加左右表均带别名的左联表。
+     *
+     * <p>当同一实体在查询中被多次关联时，右侧关联字段必须显式指定所属表别名，
+     * 避免框架按主表别名生成错误的连接条件。</p>
+     *
+     * @param entityClass 关联实体类型
+     * @param alias       关联表别名
+     * @param left        关联实体字段
+     * @param rightAlias  当前查询字段所属表别名
+     * @param right       当前查询字段
+     * @return 当前联表查询构造辅助对象
+     */
+    public <S, X> LambdaJoinQueryBuilder<T> leftJoin(Class<S> entityClass, String alias, SFunction<S, ?> left,
+                                                      String rightAlias, SFunction<X, ?> right) {
+        wrapper.leftJoin(entityClass, alias, left, rightAlias, right);
+        return this;
+    }
+
+    /**
      * 添加等于条件。
      *
      * @param alias  表别名

@@ -3,6 +3,8 @@ package org.dromara.auth.domain.vo;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 登录验证信息
  *
@@ -50,5 +52,15 @@ public class LoginVo {
      * 用户 openid
      */
     private String openid;
+
+    /**
+     * 本次登录自动进入的租户。
+     */
+    private TenantLoginVo currentTenant;
+
+    /**
+     * 当前全局账号可进入的全部有效租户。
+     */
+    private List<TenantLoginVo> tenants;
 
 }

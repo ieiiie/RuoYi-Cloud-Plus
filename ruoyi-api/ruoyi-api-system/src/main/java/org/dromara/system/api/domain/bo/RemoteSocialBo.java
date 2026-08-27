@@ -22,6 +22,11 @@ public class RemoteSocialBo implements Serializable {
     private Long id;
 
     /**
+     * 全局账号ID。
+     */
+    private Long globalUserId;
+
+    /**
      * 的唯一ID
      */
     private String authId;

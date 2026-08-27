@@ -26,11 +26,6 @@ public class LoginBody {
     private String grantType;
 
     /**
-     * 租户编号。启用多租户后登录、注册等匿名请求必须传入该字段。
-     */
-    private String tenantId;
-
-    /**
      * 验证码
      */
     private String code;

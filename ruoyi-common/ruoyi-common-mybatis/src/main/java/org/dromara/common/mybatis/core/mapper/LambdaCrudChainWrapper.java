@@ -343,7 +343,7 @@ public class LambdaCrudChainWrapper<T, V> extends AbstractLambdaWrapper<T, Lambd
      * 指定子查询字段。
      * <pre>{@code
      * userMapper.lambda()
-     *     .select(SysUser::getUserId, SysUser::getUserName)
+     *     .select(SysUser::getUserId, SysUser::getNickName)
      *     .selectSub(SysUserRole.class, sub -> sub
      *         .selectCountAll()
      *         .eqColumn(SysUserRole::getUserId, SysUser::getUserId),

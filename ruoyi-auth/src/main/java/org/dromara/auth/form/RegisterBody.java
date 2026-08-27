@@ -16,6 +16,12 @@ import org.hibernate.validator.constraints.Length;
 public class RegisterBody extends LoginBody {
 
     /**
+     * 注册目标租户。登录不需要指定租户，但注册仍需明确加入哪个租户。
+     */
+    @NotBlank(message = "租户编号不能为空")
+    private String tenantId;
+
+    /**
      * 用户名
      */
     @NotBlank(message = "{user.username.not.blank}")

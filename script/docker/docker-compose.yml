@@ -35,6 +35,8 @@ services:
     environment:
       TZ: Asia/Shanghai
       MODE: standalone
+      # 仅启动配置中心与服务发现，不加载 AI/Agent/Skill 模块。
+      FUNCTION_MODE: microservice
       PREFER_HOST_MODE: hostname
       JVM_XMS: 256m
       JVM_XMX: 512m

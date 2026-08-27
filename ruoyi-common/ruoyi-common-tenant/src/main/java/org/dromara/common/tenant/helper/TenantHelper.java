@@ -1,7 +1,6 @@
 package org.dromara.common.tenant.helper;
 
-import cn.dev33.satoken.context.SaHolder;
-import cn.dev33.satoken.context.model.SaStorage;
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.ObjectUtil;
@@ -10,11 +9,9 @@ import com.baomidou.mybatisplus.core.plugins.InterceptorIgnoreHelper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.common.core.constant.GlobalConstants;
 import org.dromara.common.core.utils.SpringUtils;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.core.utils.reflect.ReflectUtils;
-import org.dromara.common.redis.utils.RedisUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.dromara.common.tenant.exception.TenantException;
 
@@ -33,7 +30,8 @@ import java.util.function.Supplier;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TenantHelper {
 
-    private static final String DYNAMIC_TENANT_KEY = GlobalConstants.GLOBAL_REDIS_KEY + "dynamicTenant";
+    /** token session 中的平台临时数据视图租户。 */
+    private static final String DYNAMIC_TENANT_KEY = "dynamicTenant";
 
     private static final ThreadLocal<String> TEMP_DYNAMIC_TENANT = new ThreadLocal<>();
 
@@ -51,8 +49,8 @@ public class TenantHelper {
     /**
      * 校验租户模式下的外部请求是否提供了租户编号。
      *
-     * <p>缺少租户编号时行级插件会跳过过滤；因此登录、注册等匿名入口
-     * 必须主动调用此方法，不能依赖插件兜底。</p>
+     * <p>缺少租户编号时行级插件会跳过过滤；因此注册等必须明确目标租户的
+     * 匿名入口应主动调用此方法，不能依赖插件兜底。全局账号登录不需要调用。</p>
      *
      * @param tenantId 租户编号
      */
@@ -155,9 +153,7 @@ public class TenantHelper {
             TEMP_DYNAMIC_TENANT.set(tenantId);
             return;
         }
-        String cacheKey = DYNAMIC_TENANT_KEY + StringUtils.COLON + LoginHelper.getUserId();
-        RedisUtils.setCacheObject(cacheKey, tenantId);
-        SaHolder.getStorage().set(cacheKey, tenantId);
+        StpUtil.getTokenSession().set(DYNAMIC_TENANT_KEY, tenantId);
     }
 
     /**
@@ -169,22 +165,15 @@ public class TenantHelper {
         if (!isEnable()) {
             return null;
         }
-        if (!LoginHelper.isLogin()) {
-            return TEMP_DYNAMIC_TENANT.get();
-        }
         String tenantId = TEMP_DYNAMIC_TENANT.get();
         if (StringUtils.isNotBlank(tenantId)) {
             return tenantId;
         }
-        SaStorage storage = SaHolder.getStorage();
-        String cacheKey = DYNAMIC_TENANT_KEY + StringUtils.COLON + LoginHelper.getUserId();
-        tenantId = storage.getString(cacheKey);
-        if (StringUtils.isNotBlank(tenantId)) {
-            return "-1".equals(tenantId) ? null : tenantId;
+        if (!LoginHelper.isLogin()) {
+            return null;
         }
-        tenantId = RedisUtils.getCacheObject(cacheKey);
-        storage.set(cacheKey, StringUtils.isBlank(tenantId) ? "-1" : tenantId);
-        return tenantId;
+        Object sessionTenantId = StpUtil.getTokenSession().get(DYNAMIC_TENANT_KEY);
+        return sessionTenantId == null ? null : Convert.toStr(sessionTenantId);
     }
 
     /**
@@ -198,9 +187,7 @@ public class TenantHelper {
         if (!LoginHelper.isLogin()) {
             return;
         }
-        String cacheKey = DYNAMIC_TENANT_KEY + StringUtils.COLON + LoginHelper.getUserId();
-        RedisUtils.deleteObject(cacheKey);
-        SaHolder.getStorage().delete(cacheKey);
+        StpUtil.getTokenSession().delete(DYNAMIC_TENANT_KEY);
     }
 
     /**

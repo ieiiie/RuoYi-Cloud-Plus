@@ -28,9 +28,23 @@ public class LoginUser implements Serializable {
     private Long userId;
 
     /**
+     * 全局账号ID。
+     *
+     * <p>同一全局账号可以在多个租户拥有不同的 {@code userId}。当前
+     * {@code userId} 始终表示当前租户内的成员ID，用于保持既有的数据权限和
+     * 业务关联语义。</p>
+     */
+    private Long globalUserId;
+
+    /**
      * 租户编号。
      */
     private String tenantId;
+
+    /**
+     * 当前租户名称。
+     */
+    private String tenantName;
 
     /**
      * 部门ID

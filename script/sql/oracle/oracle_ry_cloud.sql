@@ -35,6 +35,67 @@ create table sys_social
 
 alter table sys_social add constraint pk_sys_social primary key (id);
 
+-- 全局账号表：密码与基础资料只保存一份，不参与 tenant_id 行级隔离。
+create table sys_global_user (
+    global_user_id number(20)    not null,
+    user_name      varchar2(30)  not null,
+    nick_name      varchar2(30)  not null,
+    user_type      varchar2(10)  default 'sys_user' not null,
+    email          varchar2(50)  default null,
+    phone_number   varchar2(11)  default null,
+    gender         char(1)       default '0',
+    avatar         number(20)    default null,
+    password       varchar2(100) not null,
+    status         char(1)       default '0' not null,
+    del_flag       char(1)       default '0' not null,
+    create_dept    number(20),
+    create_by      number(20),
+    create_time    date,
+    update_by      number(20),
+    update_time    date,
+    remark         varchar2(500)
+);
+alter table sys_global_user add constraint pk_sys_global_user primary key (global_user_id);
+alter table sys_global_user add constraint uk_sys_global_user_name unique (user_name);
+alter table sys_global_user add constraint uk_sys_global_user_phone unique (phone_number);
+alter table sys_global_user add constraint uk_sys_global_user_email unique (email);
+
+-- 全局第三方账号绑定表：社交与小程序认证先定位全局账号。
+create table sys_global_social (
+    id                 number(20)      not null,
+    global_user_id     number(20)      not null,
+    auth_id            varchar2(255)   not null,
+    source             varchar2(255)   not null,
+    open_id            varchar2(255)   default null,
+    user_name          varchar2(30)    default null,
+    nick_name          varchar2(30)    default null,
+    email              varchar2(255)   default null,
+    avatar             varchar2(500)   default null,
+    access_token       varchar2(2000)  default null,
+    expire_in          number(20)      default null,
+    refresh_token      varchar2(2000)  default null,
+    access_code        varchar2(255)   default null,
+    union_id           varchar2(255)   default null,
+    scope              varchar2(255)   default null,
+    token_type         varchar2(255)   default null,
+    id_token           varchar2(2000)  default null,
+    mac_algorithm      varchar2(255)   default null,
+    mac_key            varchar2(255)   default null,
+    code               varchar2(255)   default null,
+    oauth_token        varchar2(255)   default null,
+    oauth_token_secret varchar2(255)   default null,
+    create_dept        number(20),
+    create_by          number(20),
+    create_time        date,
+    update_by          number(20),
+    update_time        date,
+    del_flag           char(1)         default '0' not null
+);
+alter table sys_global_social add constraint pk_sys_global_social primary key (id);
+alter table sys_global_social add constraint uk_sys_global_social_auth unique (source, auth_id);
+alter table sys_global_social add constraint uk_sys_global_social_open unique (open_id);
+create index idx_sys_global_social_user on sys_global_social (global_user_id);
+
 comment on table   sys_social                   is '社会化关系表';
 comment on column  sys_social.id                is '主键';
 comment on column  sys_social.user_id           is '用户ID';
@@ -131,14 +192,11 @@ insert into sys_dept values(1761000000000000109, 1761000000000000102, '0,1761000
 create table sys_user (
                           user_id           number(20)      not null,
   dept_id           number(20)      default null,
-  user_name         varchar2(40)    not null,
   nick_name         varchar2(40)    not null,
   user_type         varchar2(10)    default 'sys_user',
   email             varchar2(50)    default '',
-  phone_number      varchar2(11)    default '',
   gender            char(1)         default '0',
   avatar            number(20)      default null,
-  password          varchar2(100)   default '',
   status            char(1)         default '0',
   del_flag          char(1)         default '0',
   login_ip          varchar2(128)   default '',
@@ -148,27 +206,24 @@ create table sys_user (
   create_time       date,
   update_by         number(20)      default null,
   update_time       date,
-  remark            varchar2(500)   default ''
+  remark            varchar2(500)   default '',
+  global_user_id    number(20)      default null
 );
 
 alter table sys_user add constraint pk_sys_user primary key (user_id);
 
 create index idx_sys_user_dept_id on sys_user (dept_id);
 create index idx_sys_user_create_by on sys_user (create_by);
-create index idx_sys_user_user_name on sys_user (user_name);
-create index idx_sys_user_phone on sys_user (phone_number);
+create index idx_sys_user_global_user_id on sys_user (global_user_id);
 
 comment on table  sys_user              is '用户信息表';
 comment on column sys_user.user_id      is '用户ID';
 comment on column sys_user.dept_id      is '部门ID';
-comment on column sys_user.user_name    is '用户账号';
 comment on column sys_user.nick_name    is '用户昵称';
 comment on column sys_user.user_type    is '用户类型（sys_user系统用户）';
 comment on column sys_user.email        is '用户邮箱';
-comment on column sys_user.phone_number is '手机号码';
 comment on column sys_user.gender       is '用户性别（0男 1女 2未知）';
 comment on column sys_user.avatar       is '头像路径';
-comment on column sys_user.password     is '密码';
 comment on column sys_user.status       is '账号状态（0正常 1停用）';
 comment on column sys_user.del_flag     is '删除标志（0代表存在 1代表删除）';
 comment on column sys_user.login_ip     is '最后登录IP';
@@ -179,13 +234,33 @@ comment on column sys_user.create_time  is '创建时间';
 comment on column sys_user.update_by    is '更新者';
 comment on column sys_user.update_time  is '更新时间';
 comment on column sys_user.remark       is '备注';
+comment on column sys_user.global_user_id is '全局账号ID';
 
 -- ----------------------------
 -- 初始化-用户信息表数据
 -- ----------------------------
-insert into sys_user values(1761100000000000001, 1761000000000000103, 'admin', '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '15888888888', '1', null, '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, NULL, null, '管理员');
-insert into sys_user values(1761100000000000003, 1761000000000000108, 'test', '本部门及以下 密码666666', 'sys_user', '', '', '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, NULL, null, '');
-insert into sys_user values(1761100000000000004, 1761000000000000102, 'test1', '仅本人 密码666666', 'sys_user', '', '', '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, NULL, null, '');
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000001, 1761000000000000103, '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '1', null, '0', '0',
+        '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, null, null,
+        '管理员', 1761100000000000001);
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000003, 1761000000000000108, '本部门及以下 密码666666', 'sys_user', '', '0', null, '0', '0',
+        '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, null, null,
+        '', 1761100000000000003);
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000004, 1761000000000000102, '仅本人 密码666666', 'sys_user', '', '0', null, '0', '0',
+        '127.0.0.1', sysdate, 1761000000000000103, 1761100000000000001, sysdate, null, null,
+        '', 1761100000000000004);
+
+insert into sys_global_user values(1761100000000000001, 'admin', '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '15888888888', '1', null, '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 1761000000000000103, 1761100000000000001, sysdate, null, null, '管理员');
+insert into sys_global_user values(1761100000000000003, 'test', '本部门及以下 密码666666', 'sys_user', null, null, '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', 1761000000000000103, 1761100000000000001, sysdate, null, null, null);
+insert into sys_global_user values(1761100000000000004, 'test1', '仅本人 密码666666', 'sys_user', null, null, '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', 1761000000000000103, 1761100000000000001, sysdate, null, null, null);
 
 -- ----------------------------
 -- 3、岗位信息表
@@ -1168,4 +1243,3 @@ after logon on database
 begin
 execute immediate 'alter session set nls_date_format=''YYYY-MM-DD HH24:MI:SS''';
 end;
-

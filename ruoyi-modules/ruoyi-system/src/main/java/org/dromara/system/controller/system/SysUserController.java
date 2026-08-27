@@ -6,12 +6,15 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.crypto.digest.BCrypt;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.dromara.common.core.constant.CacheNames;
 import org.dromara.common.core.constant.SystemConstants;
+import org.dromara.common.core.constant.TenantConstants;
 import org.dromara.common.core.domain.PageResult;
 import org.dromara.common.core.domain.R;
+import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.utils.StreamUtils;
 import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.encrypt.annotation.ApiEncrypt;
@@ -26,6 +29,7 @@ import org.dromara.common.redis.utils.RedisUtils;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.dromara.common.web.core.BaseController;
 import org.dromara.system.api.model.LoginUser;
+import org.dromara.system.domain.SysGlobalUser;
 import org.dromara.system.domain.bo.SysDeptBo;
 import org.dromara.system.domain.bo.SysPostBo;
 import org.dromara.system.domain.bo.SysRoleBo;
@@ -33,6 +37,7 @@ import org.dromara.system.domain.bo.SysUserBo;
 import org.dromara.system.domain.vo.*;
 import org.dromara.system.listener.SysUserImportListener;
 import org.dromara.system.service.ISysDeptService;
+import org.dromara.system.service.ISysGlobalUserService;
 import org.dromara.system.service.ISysPostService;
 import org.dromara.system.service.ISysRoleService;
 import org.dromara.system.service.ISysUserService;
@@ -59,6 +64,7 @@ public class SysUserController extends BaseController {
     private final ISysRoleService roleService;
     private final ISysPostService postService;
     private final ISysDeptService deptService;
+    private final ISysGlobalUserService globalUserService;
 
     /**
      * 获取用户列表
@@ -67,6 +73,23 @@ public class SysUserController extends BaseController {
     @GetMapping("/list")
     public R<PageResult<SysUserVo>> list(SysUserBo user, PageQuery pageQuery) {
         return R.ok(userService.selectPageUserList(user, pageQuery));
+    }
+
+    /**
+     * 在添加租户成员前按用户名、手机号或邮箱定位全局账号。
+     *
+     * <p>调用方拿到资料后仍需提交当前租户的部门、角色、岗位和成员状态；服务层会
+     * 再次校验同租户是否已存在该全局账号，避免并发重复添加。</p>
+     */
+    @SaCheckPermission("system:user:add")
+    @GetMapping("/global/lookup")
+    public R<SysGlobalUserVo> lookupGlobalUser(@NotBlank(message = "账号标识不能为空") @RequestParam String identifier) {
+        SysGlobalUser globalUser = globalUserService.queryByIdentifier(identifier);
+        if (ObjectUtil.isNull(globalUser)) {
+            // 未命中是“创建全局账号”的正常分支，不能以失败响应打断添加人员流程。
+            return R.ok("未找到全局账号，可按新账号添加成员", null);
+        }
+        return R.ok(globalUserService.queryVoById(globalUser.getGlobalUserId()));
     }
 
     /**
@@ -162,14 +185,11 @@ public class SysUserController extends BaseController {
     @PostMapping
     public R<Void> add(@Validated @RequestBody SysUserBo user) {
         deptService.checkDeptDataScope(user.getDeptId());
-        if (!userService.checkUserNameUnique(user)) {
-            return R.fail("新增用户'" + user.getUserName() + "'失败，登录账号已存在");
-        } else if (StringUtils.isNotEmpty(user.getPhoneNumber()) && !userService.checkPhoneUnique(user)) {
-            return R.fail("新增用户'" + user.getUserName() + "'失败，手机号码已存在");
-        } else if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(user)) {
-            return R.fail("新增用户'" + user.getUserName() + "'失败，邮箱账号已存在");
+        // 命中已有全局账号时应将其加入当前租户，而不是按“用户名已存在”拒绝。
+        // 同租户重复、多个标识命中不同账号和资料冲突均由服务层在同一事务内校验。
+        if (StringUtils.isNotEmpty(user.getPassword())) {
+            user.setPassword(BCrypt.hashpw(user.getPassword()));
         }
-        user.setPassword(BCrypt.hashpw(user.getPassword()));
         return toAjax(userService.insertUser(user));
     }
 
@@ -184,13 +204,6 @@ public class SysUserController extends BaseController {
         userService.checkUserAllowed(user.getUserId());
         userService.checkUserDataScope(user.getUserId());
         deptService.checkDeptDataScope(user.getDeptId());
-        if (!userService.checkUserNameUnique(user)) {
-            return R.fail("修改用户'" + user.getUserName() + "'失败，登录账号已存在");
-        } else if (StringUtils.isNotEmpty(user.getPhoneNumber()) && !userService.checkPhoneUnique(user)) {
-            return R.fail("修改用户'" + user.getUserName() + "'失败，手机号码已存在");
-        } else if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(user)) {
-            return R.fail("修改用户'" + user.getUserName() + "'失败，邮箱账号已存在");
-        }
         return toAjax(userService.updateUser(user));
     }
 
@@ -231,6 +244,7 @@ public class SysUserController extends BaseController {
     @RepeatSubmit()
     @PutMapping("/resetPwd")
     public R<Void> resetPwd(@RequestBody SysUserBo user) {
+        checkPlatformGlobalAccountManager();
         userService.checkUserAllowed(user.getUserId());
         userService.checkUserDataScope(user.getUserId());
         user.setPassword(BCrypt.hashpw(user.getPassword()));
@@ -269,6 +283,15 @@ public class SysUserController extends BaseController {
             RedisUtils.deleteObject(loginName);
         }
         return R.ok();
+    }
+
+    /**
+     * 全局密码会影响账号在全部租户的登录，仅默认管理租户的超级管理员可代为重置。
+     */
+    private void checkPlatformGlobalAccountManager() {
+        if (!LoginHelper.isSuperAdmin() || !TenantConstants.DEFAULT_TENANT_ID.equals(LoginHelper.getTenantId())) {
+            throw new ServiceException("仅默认管理租户的超级管理员可以重置全局账号密码");
+        }
     }
 
     /**

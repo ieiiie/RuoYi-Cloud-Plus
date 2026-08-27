@@ -4,8 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +13,9 @@ import org.dromara.common.core.domain.PageResult;
 import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.utils.*;
 import org.dromara.common.mybatis.core.page.PageQuery;
-import org.dromara.common.mybatis.core.query.QueryBuilder;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.dromara.common.tenant.helper.TenantHelper;
+import org.dromara.system.domain.SysGlobalUser;
 import org.dromara.system.domain.SysUser;
 import org.dromara.system.domain.SysUserPost;
 import org.dromara.system.domain.SysUserRole;
@@ -27,6 +25,7 @@ import org.dromara.system.domain.vo.SysRoleVo;
 import org.dromara.system.domain.vo.SysUserExportVo;
 import org.dromara.system.domain.vo.SysUserVo;
 import org.dromara.system.mapper.*;
+import org.dromara.system.service.ISysGlobalUserService;
 import org.dromara.system.service.ISysUserService;
 import org.dromara.system.service.ISysTenantService;
 import org.springframework.cache.annotation.CacheEvict;
@@ -53,10 +52,12 @@ public class SysUserServiceImpl implements ISysUserService {
     private final SysUserRoleMapper userRoleMapper;
     private final SysUserPostMapper userPostMapper;
     private final ISysTenantService tenantService;
+    private final ISysGlobalUserService globalUserService;
 
     @Override
     public PageResult<SysUserVo> selectPageUserList(SysUserBo user, PageQuery pageQuery) {
-        Page<SysUserVo> page = userMapper.selectPageUserList(pageQuery.build(), this.buildQueryWrapper(user));
+        List<Long> deptIds = ObjectUtil.isNotNull(user.getDeptId()) ? deptMapper.selectDeptAndChildById(user.getDeptId()) : null;
+        Page<SysUserVo> page = userMapper.selectPageUserList(pageQuery.build(), user, deptIds);
         return PageResult.build(page.getRecords(), page.getTotal());
     }
 
@@ -70,29 +71,6 @@ public class SysUserServiceImpl implements ISysUserService {
     public List<SysUserExportVo> selectUserExportList(SysUserBo user) {
         List<Long> deptIds = ObjectUtil.isNotNull(user.getDeptId()) ? deptMapper.selectDeptAndChildById(user.getDeptId()) : null;
         return userMapper.selectUserExportList(user, deptIds);
-    }
-
-    private Wrapper<SysUser> buildQueryWrapper(SysUserBo user) {
-        Map<String, Object> params = user.getParams();
-        LambdaQueryWrapper<SysUser> wrapper = QueryBuilder.lambda(SysUser.class)
-            .eq(SysUser::getDelFlag, SystemConstants.NORMAL)
-            .eqIfPresent(SysUser::getUserId, user.getUserId())
-            .in(StringUtils.isNotBlank(user.getUserIds()), SysUser::getUserId, StringUtils.splitTo(user.getUserIds(), Convert::toLong))
-            .likeIfText(SysUser::getUserName, user.getUserName())
-            .likeIfText(SysUser::getNickName, user.getNickName())
-            .eqIfText(SysUser::getStatus, user.getStatus())
-            .likeIfText(SysUser::getPhoneNumber, user.getPhoneNumber())
-            .betweenParams(SysUser::getCreateTime, params, "beginTime", "endTime")
-            .and(ObjectUtil.isNotNull(user.getDeptId()), w -> {
-                List<Long> ids = deptMapper.selectDeptAndChildById(user.getDeptId());
-                w.in(SysUser::getDeptId, ids);
-            })
-            .orderByAsc(SysUser::getUserId)
-            .build();
-        if (StringUtils.isNotBlank(user.getExcludeUserIds())) {
-            wrapper.notIn(SysUser::getUserId, StringUtils.splitTo(user.getExcludeUserIds(), Convert::toLong));
-        }
-        return wrapper;
     }
 
     /**
@@ -128,7 +106,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public SysUserVo selectUserByUserName(String userName) {
-        return userMapper.lambda().eq(SysUser::getUserName, userName).voOne();
+        return userMapper.selectUserByUserName(userName);
     }
 
     /**
@@ -139,7 +117,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public SysUserVo selectUserByPhoneNumber(String phoneNumber) {
-        return userMapper.lambda().eq(SysUser::getPhoneNumber, phoneNumber).voOne();
+        return userMapper.selectUserByPhoneNumber(phoneNumber);
     }
 
     /**
@@ -150,7 +128,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public SysUserVo selectUserById(Long userId) {
-        SysUserVo user = userMapper.selectVoById(userId);
+        SysUserVo user = userMapper.selectUserVoById(userId);
         if (ObjectUtil.isNull(user)) {
             return user;
         }
@@ -167,12 +145,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public List<SysUserVo> selectUserByIds(List<Long> userIds, Long deptId) {
-        return userMapper.selectUserList(userMapper.lambda()
-            .select(SysUser::getUserId, SysUser::getUserName, SysUser::getNickName, SysUser::getEmail, SysUser::getPhoneNumber)
-            .eq(SysUser::getStatus, SystemConstants.NORMAL)
-            .eqIfPresent(SysUser::getDeptId, deptId)
-            .inIfNotEmpty(SysUser::getUserId, userIds)
-            .build());
+        return userMapper.selectUserByIds(userIds, deptId);
     }
 
     /**
@@ -213,11 +186,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public boolean checkUserNameUnique(SysUserBo user) {
-        boolean exist = userMapper.lambda()
-            .eq(SysUser::getUserName, user.getUserName())
-            .neIfPresent(SysUser::getUserId, user.getUserId())
-            .exists();
-        return !exist;
+        return checkGlobalIdentifierUnique(user, user.getUserName());
     }
 
     /**
@@ -227,11 +196,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public boolean checkPhoneUnique(SysUserBo user) {
-        boolean exist = userMapper.lambda()
-            .eq(SysUser::getPhoneNumber, user.getPhoneNumber())
-            .neIfPresent(SysUser::getUserId, user.getUserId())
-            .exists();
-        return !exist;
+        return checkGlobalIdentifierUnique(user, user.getPhoneNumber());
     }
 
     /**
@@ -241,11 +206,33 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public boolean checkEmailUnique(SysUserBo user) {
-        boolean exist = userMapper.lambda()
-            .eq(SysUser::getEmail, user.getEmail())
-            .neIfPresent(SysUser::getUserId, user.getUserId())
-            .exists();
-        return !exist;
+        return checkGlobalIdentifierUnique(user, user.getEmail());
+    }
+
+    /**
+     * 校验认证标识是否归属于当前用户的全局账号。
+     *
+     * <p>用户名、手机号和邮箱在全局账号维度唯一；新增成员时命中已有全局账号是
+     * “复用账号”的正常场景，因此新增入口不应直接以本方法拒绝该账号。</p>
+     *
+     * @param user       租户成员请求
+     * @param identifier 用户名、手机号或邮箱
+     * @return true 标识未被其他全局账号占用
+     */
+    private boolean checkGlobalIdentifierUnique(SysUserBo user, String identifier) {
+        if (StringUtils.isBlank(identifier)) {
+            return true;
+        }
+        SysGlobalUser globalUser = globalUserService.queryByIdentifier(identifier);
+        if (ObjectUtil.isNull(globalUser)) {
+            return true;
+        }
+        if (ObjectUtil.isNull(user.getUserId())) {
+            return false;
+        }
+        SysUser tenantUser = userMapper.selectById(user.getUserId());
+        return ObjectUtil.isNotNull(tenantUser)
+            && ObjectUtil.equals(tenantUser.getGlobalUserId(), globalUser.getGlobalUserId());
     }
 
     /**
@@ -289,6 +276,14 @@ public class SysUserServiceImpl implements ISysUserService {
     public int insertUser(SysUserBo user) {
         tenantService.checkAccountBalance(TenantHelper.getTenantId());
         SysUser sysUser = MapstructUtils.convert(user, SysUser.class);
+        SysGlobalUser globalUser = globalUserService.resolveOrCreate(toGlobalUserCandidate(user));
+        boolean exists = userMapper.lambda()
+            .eq(SysUser::getGlobalUserId, globalUser.getGlobalUserId())
+            .exists();
+        if (exists) {
+            throw new ServiceException("该全局账号已在当前租户中存在");
+        }
+        globalUserService.applyToTenantUser(globalUser, sysUser);
         // 新增用户信息
         int rows = userMapper.insert(sysUser);
         user.setUserId(sysUser.getUserId());
@@ -306,12 +301,44 @@ public class SysUserServiceImpl implements ISysUserService {
      * @return 结果
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean registerUser(SysUserBo user) {
         tenantService.checkAccountBalance(TenantHelper.getTenantId());
         user.setCreateBy(0L);
         user.setUpdateBy(0L);
         SysUser sysUser = MapstructUtils.convert(user, SysUser.class);
+        SysGlobalUser globalUser = globalUserService.resolveOrCreate(toGlobalUserCandidate(user));
+        boolean exists = userMapper.lambda()
+            .eq(SysUser::getGlobalUserId, globalUser.getGlobalUserId())
+            .exists();
+        if (exists) {
+            throw new ServiceException("该全局账号已在当前租户中存在");
+        }
+        globalUserService.applyToTenantUser(globalUser, sysUser);
         return userMapper.insert(sysUser) > 0;
+    }
+
+    /**
+     * 将新增或注册请求中的全局账号资料与租户成员资料拆分。
+     *
+     * <p>sys_user 不再持久化用户名、手机号和密码；这些字段仅作为本次创建或复用
+     * 全局账号的输入传给 sys_global_user。</p>
+     *
+     * @param user 用户请求
+     * @return 全局账号候选资料
+     */
+    private SysGlobalUser toGlobalUserCandidate(SysUserBo user) {
+        SysGlobalUser globalUser = new SysGlobalUser();
+        globalUser.setUserName(user.getUserName());
+        globalUser.setNickName(user.getNickName());
+        globalUser.setUserType(user.getUserType());
+        globalUser.setEmail(user.getEmail());
+        globalUser.setPhoneNumber(user.getPhoneNumber());
+        globalUser.setGender(user.getGender());
+        globalUser.setAvatar(user.getAvatar());
+        globalUser.setPassword(user.getPassword());
+        globalUser.setRemark(user.getRemark());
+        return globalUser;
     }
 
     /**
@@ -324,17 +351,49 @@ public class SysUserServiceImpl implements ISysUserService {
     @CacheEvict(cacheNames = CacheNames.SYS_NICKNAME, key = "#user.userId")
     @Transactional(rollbackFor = Exception.class)
     public int updateUser(SysUserBo user) {
+        SysUser current = userMapper.selectById(user.getUserId());
+        if (ObjectUtil.isNull(current)) {
+            throw new ServiceException("用户不存在");
+        }
+        SysGlobalUser globalUser = globalUserService.queryById(current.getGlobalUserId());
+        if (ObjectUtil.isNull(globalUser)) {
+            throw new ServiceException("当前租户用户未关联全局账号");
+        }
+        checkTenantMemberOnlyUpdate(user, globalUser);
         // 新增用户与角色管理
         insertUserRole(user, true);
         // 新增用户与岗位管理
         insertUserPost(user, true);
-        SysUser sysUser = MapstructUtils.convert(user, SysUser.class);
+        // 租户管理员只能维护本租户成员属性，账号资料由全局账号服务统一维护。
+        SysUser sysUser = new SysUser();
+        sysUser.setUserId(user.getUserId());
+        sysUser.setDeptId(user.getDeptId());
+        sysUser.setStatus(user.getStatus());
+        sysUser.setRemark(user.getRemark());
         // 防止错误更新后导致的数据误删除
         int flag = userMapper.updateById(sysUser);
         if (flag < 1) {
             throw new ServiceException("修改用户{}信息失败", user.getUserName());
         }
         return flag;
+    }
+
+    /**
+     * 用户管理编辑接口只允许维护租户成员关系。全局资料必须由账号本人或默认
+     * 管理租户的超级管理员通过全局账号接口修改，避免“提交成功但资料未生效”。
+     */
+    private void checkTenantMemberOnlyUpdate(SysUserBo request, SysGlobalUser globalUser) {
+        boolean changed = !StringUtils.equals(request.getUserName(), globalUser.getUserName())
+            || !StringUtils.equals(request.getNickName(), globalUser.getNickName())
+            || (StringUtils.isNotBlank(request.getUserType()) && !StringUtils.equals(request.getUserType(), globalUser.getUserType()))
+            || (StringUtils.isNotBlank(request.getEmail()) && !StringUtils.equals(request.getEmail(), globalUser.getEmail()))
+            || (StringUtils.isNotBlank(request.getPhoneNumber()) && !StringUtils.equals(request.getPhoneNumber(), globalUser.getPhoneNumber()))
+            || (StringUtils.isNotBlank(request.getGender()) && !StringUtils.equals(request.getGender(), globalUser.getGender()))
+            || (ObjectUtil.isNotNull(request.getAvatar()) && !ObjectUtil.equals(request.getAvatar(), globalUser.getAvatar()))
+            || StringUtils.isNotBlank(request.getPassword());
+        if (changed) {
+            throw new ServiceException("租户用户管理不能修改全局账号资料，请由账号本人或默认管理租户超级管理员维护");
+        }
     }
 
     /**
@@ -373,14 +432,18 @@ public class SysUserServiceImpl implements ISysUserService {
     @CacheEvict(cacheNames = CacheNames.SYS_NICKNAME, key = "#user.userId")
     @Override
     public int updateUserProfile(SysUserBo user) {
-        return userMapper.lambda()
-            .setIfPresent(SysUser::getNickName, user.getNickName())
-            .setIfPresent(SysUser::getAvatar, user.getAvatar())
-            .setIfPresent(SysUser::getPhoneNumber, user.getPhoneNumber())
-            .setIfPresent(SysUser::getEmail, user.getEmail())
-            .setIfPresent(SysUser::getGender, user.getGender())
-            .eq(SysUser::getUserId, user.getUserId())
-            .updateCount();
+        SysUser tenantUser = userMapper.selectById(user.getUserId());
+        if (ObjectUtil.isNull(tenantUser) || ObjectUtil.isNull(tenantUser.getGlobalUserId())) {
+            throw new ServiceException("当前租户用户未关联全局账号");
+        }
+        org.dromara.system.domain.bo.SysUserProfileBo profile = new org.dromara.system.domain.bo.SysUserProfileBo();
+        profile.setUserName(user.getUserName());
+        profile.setNickName(user.getNickName());
+        profile.setAvatar(user.getAvatar());
+        profile.setPhoneNumber(user.getPhoneNumber());
+        profile.setEmail(user.getEmail());
+        profile.setGender(user.getGender());
+        return globalUserService.updateProfile(tenantUser.getGlobalUserId(), profile);
     }
 
     /**
@@ -392,10 +455,11 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public int resetUserPwd(Long userId, String password) {
-        return userMapper.lambda()
-            .set(SysUser::getPassword, password)
-            .eq(SysUser::getUserId, userId)
-            .updateCount();
+        SysUser tenantUser = userMapper.selectById(userId);
+        if (ObjectUtil.isNull(tenantUser) || ObjectUtil.isNull(tenantUser.getGlobalUserId())) {
+            throw new ServiceException("当前租户用户未关联全局账号");
+        }
+        return globalUserService.resetPassword(tenantUser.getGlobalUserId(), password);
     }
 
     /**
@@ -496,12 +560,14 @@ public class SysUserServiceImpl implements ISysUserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteUserById(Long userId) {
+        checkUserAllowed(userId);
+        checkUserDataScope(userId);
         // 删除用户与角色关联
         userRoleMapper.lambda().eq(SysUserRole::getUserId, userId).deleteCount();
         // 删除用户与岗位表
         userPostMapper.lambda().eq(SysUserPost::getUserId, userId).deleteCount();
-        // 防止更新失败导致的数据删除
-        int flag = userMapper.deleteById(userId);
+        // 仅删除当前租户成员，保留 sys_global_user；物理删除可释放成员唯一关系以便再次加入。
+        int flag = userMapper.deleteTenantMemberById(userId);
         if (flag < 1) {
             throw new ServiceException("删除用户失败!");
         }
@@ -526,9 +592,11 @@ public class SysUserServiceImpl implements ISysUserService {
         userRoleMapper.lambda().in(SysUserRole::getUserId, ids).delete();
         // 删除用户与岗位表
         userPostMapper.lambda().in(SysUserPost::getUserId, ids).delete();
-        // 防止更新失败导致的数据删除
-        int flag = userMapper.deleteByIds(ids);
-        if (flag < 1) {
+        int flag = 0;
+        for (Long userId : ids) {
+            flag += userMapper.deleteTenantMemberById(userId);
+        }
+        if (flag != ids.size()) {
             throw new ServiceException("删除用户失败!");
         }
         return flag;
@@ -542,10 +610,7 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public List<SysUserVo> selectUserListByDept(Long deptId) {
-        return userMapper.lambda()
-            .eq(SysUser::getDeptId, deptId)
-            .orderByAsc(SysUser::getUserId)
-            .voList();
+        return userMapper.selectUserVoListByDeptId(deptId);
     }
 
     @Override
@@ -566,11 +631,8 @@ public class SysUserServiceImpl implements ISysUserService {
     @Cacheable(cacheNames = CacheNames.SYS_USER_NAME, key = "#userId")
     @Override
     public String selectUserNameById(Long userId) {
-        SysUser sysUser = userMapper.lambda()
-            .select(SysUser::getUserName)
-            .eq(SysUser::getUserId, userId)
-            .one();
-        return ObjectUtils.notNullGetter(sysUser, SysUser::getUserName);
+        SysUserVo user = userMapper.selectUserVoById(userId);
+        return ObjectUtils.notNullGetter(user, SysUserVo::getUserName);
     }
 
     /**
@@ -609,11 +671,8 @@ public class SysUserServiceImpl implements ISysUserService {
      */
     @Override
     public String selectPhonenumberById(Long userId) {
-        SysUser sysUser = userMapper.lambda()
-            .select(SysUser::getPhoneNumber)
-            .eq(SysUser::getUserId, userId)
-            .one();
-        return ObjectUtils.notNullGetter(sysUser, SysUser::getPhoneNumber);
+        SysUserVo user = userMapper.selectUserVoById(userId);
+        return ObjectUtils.notNullGetter(user, SysUserVo::getPhoneNumber);
     }
 
     /**

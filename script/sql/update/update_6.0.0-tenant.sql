@@ -20,9 +20,25 @@ ALTER TABLE sys_dept
     ADD KEY idx_sys_dept_tenant_id (tenant_id);
 
 ALTER TABLE sys_user
-    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER user_id,
-    ADD KEY idx_sys_user_tenant_user_name (tenant_id, user_name),
-    ADD KEY idx_sys_user_tenant_phone (tenant_id, phone_number);
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER user_id;
+
+-- 全量初始化脚本已包含 global_user_id；旧库在执行 6.0.1 前没有此列。
+-- 因此仅当该列已存在时创建成员关系唯一索引，旧库仍由 6.0.1 脚本创建。
+SET @sys_user_has_global_user_id = (
+    SELECT COUNT(*)
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'sys_user'
+      AND COLUMN_NAME = 'global_user_id'
+);
+SET @sys_user_global_unique_sql = IF(
+    @sys_user_has_global_user_id > 0,
+    'ALTER TABLE sys_user ADD UNIQUE KEY uk_sys_user_tenant_global_user (tenant_id, global_user_id)',
+    'SELECT 1'
+);
+PREPARE sys_user_global_unique_stmt FROM @sys_user_global_unique_sql;
+EXECUTE sys_user_global_unique_stmt;
+DEALLOCATE PREPARE sys_user_global_unique_stmt;
 
 ALTER TABLE sys_post
     ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER post_id,

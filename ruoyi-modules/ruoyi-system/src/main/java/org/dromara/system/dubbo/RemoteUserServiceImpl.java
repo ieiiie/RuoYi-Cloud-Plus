@@ -18,11 +18,14 @@ import org.dromara.common.mybatis.helper.DataPermissionHelper;
 import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.system.api.RemoteUserService;
 import org.dromara.system.api.domain.bo.RemoteUserBo;
+import org.dromara.system.api.domain.vo.RemoteTenantUserVo;
 import org.dromara.system.api.domain.vo.RemoteUserVo;
 import org.dromara.system.api.model.LoginUser;
 import org.dromara.system.api.model.PostDTO;
 import org.dromara.system.api.model.RoleDTO;
 import org.dromara.system.api.model.XcxLoginUser;
+import org.dromara.system.domain.SysGlobalSocial;
+import org.dromara.system.domain.SysGlobalUser;
 import org.dromara.system.domain.SysUser;
 import org.dromara.system.domain.SysUserPost;
 import org.dromara.system.domain.SysUserRole;
@@ -30,19 +33,36 @@ import org.dromara.system.domain.bo.SysUserBo;
 import org.dromara.system.domain.vo.SysDeptVo;
 import org.dromara.system.domain.vo.SysPostVo;
 import org.dromara.system.domain.vo.SysRoleVo;
+import org.dromara.system.domain.vo.SysTenantVo;
 import org.dromara.system.domain.vo.SysUserVo;
+import org.dromara.system.mapper.SysGlobalSocialMapper;
 import org.dromara.system.mapper.SysUserMapper;
 import org.dromara.system.mapper.SysUserPostMapper;
 import org.dromara.system.mapper.SysUserRoleMapper;
-import org.dromara.system.service.*;
+import org.dromara.system.service.ISysConfigService;
+import org.dromara.system.service.ISysDeptService;
+import org.dromara.system.service.ISysGlobalUserService;
+import org.dromara.system.service.ISysPermissionService;
+import org.dromara.system.service.ISysPostService;
+import org.dromara.system.service.ISysRoleService;
+import org.dromara.system.service.ISysTenantService;
+import org.dromara.system.service.ISysUserService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /**
- * 用户服务
+ * 用户远程服务。
+ *
+ * <p>认证标识和密码只从 {@code sys_global_user} 获取；实际登录身份仍是当前租户
+ * 的 {@code sys_user}，这样既保留原有角色、部门、岗位和数据权限，也能让一个
+ * 账号进入多个租户。</p>
  *
  * @author Lion Li
  */
@@ -58,53 +78,39 @@ public class RemoteUserServiceImpl implements RemoteUserService {
     private final ISysDeptService deptService;
     private final ISysPostService postService;
     private final ISysTenantService tenantService;
+    private final ISysGlobalUserService globalUserService;
     private final SysUserMapper userMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final SysUserPostMapper userPostMapper;
+    private final SysGlobalSocialMapper globalSocialMapper;
 
     /**
-     * 通过用户名查询用户信息
-     *
-     * @param username 用户名
-     * @return 结果
+     * 通过用户名（也允许手机号、邮箱）查询默认可登录租户。
      */
     @Override
     public LoginUser getUserInfo(String username) throws UserException {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        SysUserVo sysUser = userMapper.lambda().eq(SysUser::getUserName, username).voOne();
-        if (ObjectUtil.isNull(sysUser)) {
-            throw new UserException("user.not.exists", username);
-        }
-        if (UserStatus.DISABLE.getCode().equals(sysUser.getStatus())) {
-            throw new UserException("user.blocked", username);
-        }
-        return buildLoginUser(sysUser);
-    }
-
-    @Override
-    public LoginUser getUserInfo(String username, String tenantId) throws UserException {
-        return executeInTenant(tenantId, () -> getUserInfo(username));
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(username).getGlobalUserId());
     }
 
     /**
-     * 通过用户id查询用户信息
-     *
-     * @param userId 用户id
-     * @return 结果
+     * 兼容旧调用方：先按全局账号定位，再进入调用方指定的租户。
+     */
+    @Override
+    public LoginUser getUserInfo(String username, String tenantId) throws UserException {
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(username).getGlobalUserId(), tenantId);
+    }
+
+    /**
+     * 按当前租户内成员ID查询登录信息，供既有服务内部调用使用。
      */
     @Override
     public LoginUser getUserInfo(Long userId) throws UserException {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        SysUserVo sysUser = userMapper.selectVoById(userId);
-        if (ObjectUtil.isNull(sysUser)) {
-            throw new UserException("user.not.exists", "");
+        SysUser tenantUser = userMapper.selectById(userId);
+        if (ObjectUtil.isNull(tenantUser)) {
+            throw new UserException("user.not.exists", StringUtils.EMPTY);
         }
-        if (UserStatus.DISABLE.getCode().equals(sysUser.getStatus())) {
-            throw new UserException("user.blocked", sysUser.getUserName());
-        }
-        // 框架登录不限制从什么表查询 只要最终构建出 LoginUser 即可
-        // 此处可根据登录用户的数据不同 自行创建 loginUser 属性不够用继承扩展就行了
-        return buildLoginUser(sysUser);
+        SysGlobalUser globalUser = requireActiveGlobalUser(tenantUser);
+        return buildLoginUser(globalUser, requireActiveTenantUser(globalUser, tenantUser));
     }
 
     @Override
@@ -112,96 +118,126 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return executeInTenant(tenantId, () -> getUserInfo(userId));
     }
 
+    @Override
+    public LoginUser getUserInfoByGlobalUserId(Long globalUserId) throws UserException {
+        SysGlobalUser globalUser = requireActiveGlobalUser(globalUserId);
+        List<SysUser> tenantUsers = TenantHelper.ignore(() -> userMapper.lambda()
+            .eq(SysUser::getGlobalUserId, globalUserId)
+            .eq(SysUser::getStatus, SystemConstants.NORMAL)
+            .orderByAsc(SysUser::getCreateTime)
+            .orderByAsc(SysUser::getUserId)
+            .list());
+
+        ServiceException unavailableTenant = null;
+        for (SysUser tenantUser : tenantUsers) {
+            try {
+                tenantService.checkTenantAvailable(tenantUser.getTenantId());
+            } catch (ServiceException e) {
+                // 账号有多个成员时，跳过已停用或到期的租户，继续按创建时间选择。
+                unavailableTenant = e;
+                continue;
+            }
+            return buildLoginUser(globalUser, requireActiveTenantUser(globalUser, tenantUser));
+        }
+        if (ObjectUtil.isNotNull(unavailableTenant)) {
+            throw unavailableTenant;
+        }
+        throw new UserException("user.blocked", globalUser.getUserName());
+    }
+
+    @Override
+    public LoginUser getUserInfoByGlobalUserId(Long globalUserId, String tenantId) throws UserException {
+        SysGlobalUser globalUser = requireActiveGlobalUser(globalUserId);
+        if (StringUtils.isBlank(tenantId)) {
+            return getUserInfoByGlobalUserId(globalUserId);
+        }
+        tenantService.checkTenantAvailable(tenantId);
+        SysUser tenantUser = TenantHelper.dynamic(tenantId, () -> userMapper.lambda()
+            .eq(SysUser::getGlobalUserId, globalUserId)
+            .one());
+        if (ObjectUtil.isNull(tenantUser)) {
+            throw new ServiceException("当前账号不属于目标租户");
+        }
+        return buildLoginUser(globalUser, requireActiveTenantUser(globalUser, tenantUser));
+    }
+
+    @Override
+    public List<RemoteTenantUserVo> listTenantUsers(Long globalUserId) {
+        if (ObjectUtil.isNull(globalUserId)) {
+            return List.of();
+        }
+        List<SysUser> tenantUsers = TenantHelper.ignore(() -> userMapper.lambda()
+            .select(SysUser::getUserId, SysUser::getTenantId, SysUser::getStatus, SysUser::getCreateTime)
+            .eq(SysUser::getGlobalUserId, globalUserId)
+            .eq(SysUser::getStatus, SystemConstants.NORMAL)
+            .orderByAsc(SysUser::getCreateTime)
+            .orderByAsc(SysUser::getUserId)
+            .list());
+        List<RemoteTenantUserVo> result = new ArrayList<>(tenantUsers.size());
+        for (SysUser tenantUser : tenantUsers) {
+            try {
+                tenantService.checkTenantAvailable(tenantUser.getTenantId());
+                SysTenantVo tenant = tenantService.queryByTenantId(tenantUser.getTenantId());
+                if (ObjectUtil.isNull(tenant)) {
+                    continue;
+                }
+                RemoteTenantUserVo item = new RemoteTenantUserVo();
+                item.setTenantId(tenantUser.getTenantId());
+                item.setTenantName(tenant.getCompanyName());
+                item.setUserId(tenantUser.getUserId());
+                result.add(item);
+            } catch (ServiceException ignored) {
+                // 已停用、过期或删除的租户不能出现在可切换列表中。
+            }
+        }
+        return result;
+    }
+
     /**
-     * 通过手机号查询用户信息
-     *
-     * @param phoneNumber 手机号
-     * @return 结果
+     * 通过手机号查询用户信息。
      */
     @Override
     public LoginUser getUserInfoByPhoneNumber(String phoneNumber) throws UserException {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        SysUserVo sysUser = userMapper.lambda().eq(SysUser::getPhoneNumber, phoneNumber).voOne();
-        if (ObjectUtil.isNull(sysUser)) {
-            throw new UserException("user.not.exists", phoneNumber);
-        }
-        if (UserStatus.DISABLE.getCode().equals(sysUser.getStatus())) {
-            throw new UserException("user.blocked", phoneNumber);
-        }
-        // 框架登录不限制从什么表查询 只要最终构建出 LoginUser 即可
-        // 此处可根据登录用户的数据不同 自行创建 loginUser 属性不够用继承扩展就行了
-        return buildLoginUser(sysUser);
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(phoneNumber).getGlobalUserId());
     }
 
     @Override
     public LoginUser getUserInfoByPhoneNumber(String phoneNumber, String tenantId) throws UserException {
-        return executeInTenant(tenantId, () -> getUserInfoByPhoneNumber(phoneNumber));
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(phoneNumber).getGlobalUserId(), tenantId);
     }
 
     /**
-     * 通过邮箱查询用户信息
-     *
-     * @param email 邮箱
-     * @return 结果
+     * 通过邮箱查询用户信息。
      */
     @Override
     public LoginUser getUserInfoByEmail(String email) throws UserException {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        SysUserVo user = userMapper.lambda().eq(SysUser::getEmail, email).voOne();
-        if (ObjectUtil.isNull(user)) {
-            throw new UserException("user.not.exists", email);
-        }
-        if (UserStatus.DISABLE.getCode().equals(user.getStatus())) {
-            throw new UserException("user.blocked", email);
-        }
-        // 框架登录不限制从什么表查询 只要最终构建出 LoginUser 即可
-        // 此处可根据登录用户的数据不同 自行创建 loginUser 属性不够用继承扩展就行了
-        return buildLoginUser(user);
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(email).getGlobalUserId());
     }
 
     @Override
     public LoginUser getUserInfoByEmail(String email, String tenantId) throws UserException {
-        return executeInTenant(tenantId, () -> getUserInfoByEmail(email));
+        return getUserInfoByGlobalUserId(requireActiveGlobalUser(email).getGlobalUserId(), tenantId);
     }
 
     /**
-     * 通过openid查询用户信息
-     *
-     * @param openid openid
-     * @return 结果
+     * 通过全局第三方绑定定位小程序账号。
      */
     @Override
     public XcxLoginUser getUserInfoByOpenid(String openid) throws UserException {
-        TenantHelper.checkTenantId(TenantHelper.getTenantId());
-        // todo 自行实现 userService.selectUserByOpenid(openid);
-        SysUser sysUser = new SysUser();
-        if (ObjectUtil.isNull(sysUser)) {
-            // todo 用户不存在 业务逻辑自行实现
-        }
-        if (UserStatus.DISABLE.getCode().equals(sysUser.getStatus())) {
-            // todo 用户已被停用 业务逻辑自行实现
-        }
-        // 框架登录不限制从什么表查询 只要最终构建出 LoginUser 即可
-        // 此处可根据登录用户的数据不同 自行创建 loginUser 属性不够用继承扩展就行了
-        XcxLoginUser loginUser = new XcxLoginUser();
-        loginUser.setUserId(sysUser.getUserId());
-        loginUser.setUsername(sysUser.getUserName());
-        loginUser.setNickname(sysUser.getNickName());
-        loginUser.setUserType(sysUser.getUserType());
-        loginUser.setOpenid(openid);
-        return loginUser;
+        SysGlobalSocial social = findGlobalSocialByOpenid(openid);
+        LoginUser loginUser = getUserInfoByGlobalUserId(social.getGlobalUserId());
+        return toXcxLoginUser(loginUser, openid);
     }
 
     @Override
     public XcxLoginUser getUserInfoByOpenid(String openid, String tenantId) throws UserException {
-        return executeInTenant(tenantId, () -> getUserInfoByOpenid(openid));
+        SysGlobalSocial social = findGlobalSocialByOpenid(openid);
+        LoginUser loginUser = getUserInfoByGlobalUserId(social.getGlobalUserId(), tenantId);
+        return toXcxLoginUser(loginUser, openid);
     }
 
     /**
-     * 注册用户信息
-     *
-     * @param remoteUserBo 用户信息
-     * @return 结果
+     * 注册仅能创建新全局账号，不能借由匿名注册把已有账号加入租户。
      */
     @Override
     public Boolean registerUserInfo(RemoteUserBo remoteUserBo) throws UserException, ServiceException {
@@ -214,111 +250,134 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         if (!("true".equals(configService.selectConfigByKey("sys.account.registerUser")))) {
             throw new ServiceException("当前系统没有开启注册功能");
         }
-        boolean exist = userMapper.lambda()
-            .eq(SysUser::getUserName, sysUserBo.getUserName())
-            .exists();
-        if (exist) {
+        if (ObjectUtil.isNotNull(globalUserService.queryByIdentifier(username))) {
             throw new UserException("user.register.save.error", username);
         }
         return userService.registerUser(sysUserBo);
     }
 
-    /**
-     * 通过用户ID查询用户账户
-     *
-     * @param userId 用户ID
-     * @return 用户账户
-     */
     @Override
     public String selectUserNameById(Long userId) {
         return userService.selectUserNameById(userId);
     }
 
-    /**
-     * 通过用户ID查询用户昵称
-     *
-     * @param userId 用户ID
-     * @return 用户昵称
-     */
     @Override
     public String selectNicknameById(Long userId) {
         return userService.selectNicknameById(userId);
     }
 
-    /**
-     * 通过用户ID查询用户账户
-     *
-     * @param userIds 用户ID 多个用逗号隔开
-     * @return 用户账户
-     */
     @Override
     public String selectNicknameByIds(String userIds) {
         return userService.selectNicknameByIds(userIds);
     }
 
-    /**
-     * 通过用户ID查询用户手机号
-     *
-     * @param userId 用户id
-     * @return 用户手机号
-     */
     @Override
     public String selectPhonenumberById(Long userId) {
         return userService.selectPhonenumberById(userId);
     }
 
-    /**
-     * 通过用户ID查询用户邮箱
-     *
-     * @param userId 用户id
-     * @return 用户邮箱
-     */
     @Override
     public String selectEmailById(Long userId) {
         return userService.selectEmailById(userId);
     }
 
     /**
-     * 构建登录用户
+     * 构建当前租户的登录用户，并在同一租户上下文加载部门、权限、角色和岗位。
      */
-    private LoginUser buildLoginUser(SysUserVo userVo) {
-        LoginUser loginUser = new LoginUser();
-        Long userId = userVo.getUserId();
-        loginUser.setUserId(userId);
-        loginUser.setTenantId(userVo.getTenantId());
-        loginUser.setDeptId(userVo.getDeptId());
-        loginUser.setUsername(userVo.getUserName());
-        loginUser.setNickname(userVo.getNickName());
-        loginUser.setPassword(userVo.getPassword());
-        loginUser.setUserType(userVo.getUserType());
-        if (ObjectUtil.isNotNull(userVo.getDeptId())) {
-            Opt<SysDeptVo> deptOpt = Opt.of(userVo.getDeptId()).map(deptService::selectDeptById);
-            loginUser.setDeptName(deptOpt.map(SysDeptVo::getDeptName).orElse(StringUtils.EMPTY));
-            loginUser.setDeptCategory(deptOpt.map(SysDeptVo::getDeptCategory).orElse(StringUtils.EMPTY));
+    private LoginUser buildLoginUser(SysGlobalUser globalUser, SysUser tenantUser) {
+        return TenantHelper.dynamic(tenantUser.getTenantId(), () -> {
+            LoginUser loginUser = new LoginUser();
+            Long userId = tenantUser.getUserId();
+            loginUser.setUserId(userId);
+            loginUser.setGlobalUserId(globalUser.getGlobalUserId());
+            loginUser.setTenantId(tenantUser.getTenantId());
+            SysTenantVo tenant = tenantService.queryByTenantId(tenantUser.getTenantId());
+            loginUser.setTenantName(tenant == null ? StringUtils.EMPTY : tenant.getCompanyName());
+            loginUser.setDeptId(tenantUser.getDeptId());
+            loginUser.setUsername(globalUser.getUserName());
+            loginUser.setNickname(globalUser.getNickName());
+            loginUser.setPassword(globalUser.getPassword());
+            loginUser.setUserType(globalUser.getUserType());
+            if (ObjectUtil.isNotNull(tenantUser.getDeptId())) {
+                Opt<SysDeptVo> deptOpt = Opt.of(tenantUser.getDeptId()).map(deptService::selectDeptById);
+                loginUser.setDeptName(deptOpt.map(SysDeptVo::getDeptName).orElse(StringUtils.EMPTY));
+                loginUser.setDeptCategory(deptOpt.map(SysDeptVo::getDeptCategory).orElse(StringUtils.EMPTY));
+            }
+            String tenantId = tenantUser.getTenantId();
+            ThreadUtils.virtualSubmit(() -> TenantHelper.dynamic(tenantId,
+                () -> loginUser.setMenuPermission(permissionService.getMenuPermission(userId))),
+                () -> TenantHelper.dynamic(tenantId,
+                    () -> loginUser.setRolePermission(permissionService.getRolePermission(userId))),
+                () -> TenantHelper.dynamic(tenantId, () -> {
+                    List<SysRoleVo> roles = roleService.selectRolesByUserId(userId);
+                    List<RoleDTO> roleDtos = BeanUtil.copyToList(roles, RoleDTO.class);
+                    loginUser.setRoles(roleDtos);
+                    loginUser.setDataScopeRoleMap(permissionService.getDataScopeRoleMap(roleDtos));
+                }),
+                () -> TenantHelper.dynamic(tenantId, () -> {
+                    List<SysPostVo> posts = postService.selectPostsByUserId(userId);
+                    loginUser.setPosts(BeanUtil.copyToList(posts, PostDTO.class));
+                }));
+            return loginUser;
+        });
+    }
+
+    private XcxLoginUser toXcxLoginUser(LoginUser loginUser, String openid) {
+        XcxLoginUser result = new XcxLoginUser();
+        BeanUtil.copyProperties(loginUser, result);
+        result.setOpenid(openid);
+        return result;
+    }
+
+    private SysGlobalSocial findGlobalSocialByOpenid(String openid) {
+        SysGlobalSocial social = TenantHelper.ignore(() -> globalSocialMapper.lambda()
+            .eq(SysGlobalSocial::getOpenId, openid)
+            .one());
+        if (ObjectUtil.isNull(social)) {
+            throw new UserException("user.not.exists", openid);
         }
-        String tenantId = userVo.getTenantId();
-        ThreadUtils.virtualSubmit(() -> TenantHelper.dynamic(tenantId,
-            () -> loginUser.setMenuPermission(permissionService.getMenuPermission(userId))),
-            () -> TenantHelper.dynamic(tenantId,
-                () -> loginUser.setRolePermission(permissionService.getRolePermission(userId))),
-            () -> TenantHelper.dynamic(tenantId, () -> {
-                List<SysRoleVo> roles = roleService.selectRolesByUserId(userId);
-                List<RoleDTO> roleDtos = BeanUtil.copyToList(roles, RoleDTO.class);
-                loginUser.setRoles(roleDtos);
-                loginUser.setDataScopeRoleMap(permissionService.getDataScopeRoleMap(roleDtos));
-            }),
-            () -> TenantHelper.dynamic(tenantId, () -> {
-                List<SysPostVo> posts = postService.selectPostsByUserId(userId);
-                loginUser.setPosts(BeanUtil.copyToList(posts, PostDTO.class));
-            }));
-        return loginUser;
+        return social;
+    }
+
+    private SysGlobalUser requireActiveGlobalUser(String identifier) {
+        SysGlobalUser globalUser = globalUserService.queryByIdentifier(identifier);
+        if (ObjectUtil.isNull(globalUser)) {
+            throw new UserException("user.not.exists", identifier);
+        }
+        return requireActiveGlobalUser(globalUser);
+    }
+
+    private SysGlobalUser requireActiveGlobalUser(Long globalUserId) {
+        SysGlobalUser globalUser = globalUserService.queryById(globalUserId);
+        if (ObjectUtil.isNull(globalUser)) {
+            throw new UserException("user.not.exists", StringUtils.EMPTY);
+        }
+        return requireActiveGlobalUser(globalUser);
+    }
+
+    private SysGlobalUser requireActiveGlobalUser(SysUser tenantUser) {
+        if (ObjectUtil.isNull(tenantUser.getGlobalUserId())) {
+            throw new ServiceException("租户成员未关联全局账号");
+        }
+        return requireActiveGlobalUser(tenantUser.getGlobalUserId());
+    }
+
+    private SysGlobalUser requireActiveGlobalUser(SysGlobalUser globalUser) {
+        if (UserStatus.DISABLE.getCode().equals(globalUser.getStatus())) {
+            throw new UserException("user.blocked", globalUser.getUserName());
+        }
+        return globalUser;
+    }
+
+    private SysUser requireActiveTenantUser(SysGlobalUser globalUser, SysUser tenantUser) {
+        if (UserStatus.DISABLE.getCode().equals(tenantUser.getStatus())) {
+            throw new UserException("user.blocked", globalUser.getUserName());
+        }
+        return tenantUser;
     }
 
     /**
-     * 更新用户信息
-     *
-     * @param userId 用户ID
-     * @param ip     IP地址
+     * 更新当前租户成员的登录信息。
      */
     @Override
     public void recordLoginInfo(Long userId, String ip) {
@@ -339,43 +398,22 @@ public class RemoteUserServiceImpl implements RemoteUserService {
     }
 
     /**
-     * 在指定租户上下文中执行认证相关查询，避免匿名入口绕过行级隔离。
+     * 用于注册和兼容旧调用的明确租户上下文。
      */
     private <T> T executeInTenant(String tenantId, Supplier<T> action) {
-        TenantHelper.checkTenantId(tenantId);
         tenantService.checkTenantAvailable(tenantId);
         return TenantHelper.dynamic(tenantId, action);
     }
 
-    /**
-     * 通过用户ID查询用户列表
-     *
-     * @param userIds 用户ids
-     * @return 用户列表
-     * @see org.dromara.system.domain.convert.SysUserVoConvert
-     */
     @Override
     public List<RemoteUserVo> selectListByIds(Collection<Long> userIds) {
         if (CollUtil.isEmpty(userIds)) {
             return List.of();
         }
-        List<SysUserVo> list = userMapper.lambda()
-            .select(SysUser::getUserId, SysUser::getDeptId, SysUser::getUserName,
-                SysUser::getNickName, SysUser::getUserType, SysUser::getEmail,
-                SysUser::getPhoneNumber, SysUser::getGender, SysUser::getStatus,
-                SysUser::getCreateTime)
-            .eq(SysUser::getStatus, SystemConstants.NORMAL)
-            .in(SysUser::getUserId, userIds)
-            .voList();
+        List<SysUserVo> list = userMapper.selectActiveUserVoListByIds(userIds);
         return MapstructUtils.convert(list, RemoteUserVo.class);
     }
 
-    /**
-     * 通过角色ID查询用户ID
-     *
-     * @param roleIds 角色ids
-     * @return 用户ids
-     */
     @Override
     public List<Long> selectUserIdsByRoleIds(Collection<Long> roleIds) {
         if (CollUtil.isEmpty(roleIds)) {
@@ -384,77 +422,40 @@ public class RemoteUserServiceImpl implements RemoteUserService {
         return userService.selectUserIdsByRoleIds(roleIds);
     }
 
-    /**
-     * 通过角色ID查询用户
-     *
-     * @param roleIds 角色ids
-     * @return 用户
-     */
     @Override
     public List<RemoteUserVo> selectUsersByRoleIds(Collection<Long> roleIds) {
         if (CollUtil.isEmpty(roleIds)) {
             return List.of();
         }
-
-        // 通过角色ID获取用户角色信息
         List<SysUserRole> userRoles = userRoleMapper.lambda()
             .in(SysUserRole::getRoleId, roleIds)
             .list();
-
-        // 获取用户ID列表
         Set<Long> userIds = StreamUtils.toSet(userRoles, SysUserRole::getUserId);
-
         return selectListByIds(new ArrayList<>(userIds));
     }
 
-    /**
-     * 通过部门ID查询用户
-     *
-     * @param deptIds 部门ids
-     * @return 用户
-     */
     @Override
     public List<RemoteUserVo> selectUsersByDeptIds(Collection<Long> deptIds) {
         if (CollUtil.isEmpty(deptIds)) {
             return List.of();
         }
-        List<SysUserVo> list = userMapper.lambda()
-            .select(SysUser::getUserId, SysUser::getUserName, SysUser::getNickName, SysUser::getEmail, SysUser::getPhoneNumber)
-            .eq(SysUser::getStatus, SystemConstants.NORMAL)
-            .in(SysUser::getDeptId, deptIds)
-            .voList();
+        List<SysUserVo> list = userMapper.selectActiveUserVoListByDeptIds(deptIds);
         return BeanUtil.copyToList(list, RemoteUserVo.class);
     }
 
-    /**
-     * 通过岗位ID查询用户
-     *
-     * @param postIds 岗位ids
-     * @return 用户
-     */
     @Override
     public List<RemoteUserVo> selectUsersByPostIds(Collection<Long> postIds) {
         if (CollUtil.isEmpty(postIds)) {
             return List.of();
         }
-
-        // 通过岗位ID获取用户岗位信息
         List<SysUserPost> userPosts = userPostMapper.lambda()
             .in(SysUserPost::getPostId, postIds)
             .list();
-
-        // 获取用户ID列表
         Set<Long> userIds = StreamUtils.toSet(userPosts, SysUserPost::getUserId);
-
         return selectListByIds(new ArrayList<>(userIds));
     }
 
-    /**
-     * 根据用户 ID 列表查询用户昵称映射关系
-     *
-     * @param userIds 用户 ID 列表
-     * @return Map，其中 key 为用户 ID，value 为对应的用户昵称
-     */
+    @Override
     public Map<Long, String> selectUserNicksByIds(Collection<Long> userIds) {
         if (CollUtil.isEmpty(userIds)) {
             return Map.of();
@@ -465,5 +466,4 @@ public class RemoteUserServiceImpl implements RemoteUserService {
             .list();
         return StreamUtils.toMap(list, SysUser::getUserId, SysUser::getNickName);
     }
-
 }

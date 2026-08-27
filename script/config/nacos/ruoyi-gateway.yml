@@ -8,8 +8,8 @@ security:
       - /auth/login
       - /auth/binding/*
       - /auth/register
-      - /auth/tenant/list
       - /resource/sms/code
+      - /resource/email/code
       - /resource/message/close
       - /*/v3/api-docs
       - /*/error

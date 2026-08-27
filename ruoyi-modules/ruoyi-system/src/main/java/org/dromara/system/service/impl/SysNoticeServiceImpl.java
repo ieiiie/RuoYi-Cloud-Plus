@@ -11,7 +11,6 @@ import org.dromara.common.mybatis.core.page.PageQuery;
 import org.dromara.common.mybatis.core.query.LambdaQueryBuilder;
 import org.dromara.common.mybatis.core.query.QueryBuilder;
 import org.dromara.system.domain.SysNotice;
-import org.dromara.system.domain.SysUser;
 import org.dromara.system.domain.bo.SysNoticeBo;
 import org.dromara.system.domain.vo.SysNoticeVo;
 import org.dromara.system.domain.vo.SysUserVo;
@@ -77,9 +76,7 @@ public class SysNoticeServiceImpl implements ISysNoticeService {
             .likeIfText(SysNotice::getNoticeTitle, bo.getNoticeTitle())
             .eqIfText(SysNotice::getNoticeType, bo.getNoticeType());
         if (StringUtils.isNotBlank(bo.getCreateByName())) {
-            SysUserVo sysUser = userMapper.lambda()
-                .eq(SysUser::getUserName, bo.getCreateByName())
-                .voOne();
+            SysUserVo sysUser = userMapper.selectUserByUserName(bo.getCreateByName());
             builder.eq(SysNotice::getCreateBy, ObjectUtils.notNullGetter(sysUser, SysUserVo::getUserId));
         }
         return builder.orderByAsc(SysNotice::getNoticeId).build();

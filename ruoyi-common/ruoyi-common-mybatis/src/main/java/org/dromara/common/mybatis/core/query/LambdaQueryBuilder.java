@@ -257,7 +257,7 @@ public final class LambdaQueryBuilder<T> implements LambdaQueryCondition<T, Lamb
      * 指定子查询字段。
      * <pre>{@code
      * QueryBuilder.lambda(SysUser.class)
-     *     .select(SysUser::getUserId, SysUser::getUserName)
+     *     .select(SysUser::getUserId, SysUser::getNickName)
      *     .selectSub(SysUserRole.class, sub -> sub
      *         .selectCountAll()
      *         .eqColumn(SysUserRole::getUserId, SysUser::getUserId),

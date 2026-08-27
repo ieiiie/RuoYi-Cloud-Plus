@@ -35,6 +35,7 @@ public class LoginHelper {
 
     public static final String LOGIN_USER_KEY = "loginUser";
     public static final String USER_KEY = "userId";
+    public static final String GLOBAL_USER_KEY = "globalUserId";
     public static final String USER_NAME_KEY = "userName";
     public static final String TENANT_KEY = "tenantId";
     public static final String DEPT_KEY = "deptId";
@@ -55,6 +56,7 @@ public class LoginHelper {
         model = ObjectUtil.defaultIfNull(model, new SaLoginParameter());
         fillRequestContext(loginUser, model);
         model.setExtra(USER_KEY, loginUser.getUserId())
+            .setExtra(GLOBAL_USER_KEY, loginUser.getGlobalUserId())
             .setExtra(USER_NAME_KEY, loginUser.getUsername())
             .setExtra(DEPT_KEY, loginUser.getDeptId())
             .setExtra(DEPT_NAME_KEY, loginUser.getDeptName())
@@ -64,6 +66,51 @@ public class LoginHelper {
         }
         StpUtil.login(loginUser.getLoginId(), model);
         StpUtil.getTokenSession().set(LOGIN_USER_KEY, loginUser);
+    }
+
+    /**
+     * 原子替换当前 token 会话中的有效租户用户。
+     *
+     * <p>Sa-Token 的登录 ID 在首次登录时生成，切换租户不能重新登录或换发 token；
+     * 因此授权、菜单、数据权限等实时身份信息统一从 token session 内的
+     * {@link LoginUser} 读取。切换时保留首次登录记录的客户端和终端信息。</p>
+     *
+     * @param loginUser 切换后的租户成员登录信息
+     */
+    public static void updateLoginUser(LoginUser loginUser) {
+        SaSession session = StpUtil.getTokenSession();
+        LoginUser previous = getLoginUser(session);
+        if (ObjectUtil.isNotNull(previous)) {
+            preserveSessionContext(previous, loginUser);
+        }
+        session.set(LOGIN_USER_KEY, loginUser);
+    }
+
+    private static void preserveSessionContext(LoginUser previous, LoginUser current) {
+        if (StringUtils.isBlank(current.getClientKey())) {
+            current.setClientKey(previous.getClientKey());
+        }
+        if (StringUtils.isBlank(current.getDeviceType())) {
+            current.setDeviceType(previous.getDeviceType());
+        }
+        if (StringUtils.isBlank(current.getIpaddr())) {
+            current.setIpaddr(previous.getIpaddr());
+        }
+        if (StringUtils.isBlank(current.getLoginLocation())) {
+            current.setLoginLocation(previous.getLoginLocation());
+        }
+        if (StringUtils.isBlank(current.getBrowser())) {
+            current.setBrowser(previous.getBrowser());
+        }
+        if (StringUtils.isBlank(current.getOs())) {
+            current.setOs(previous.getOs());
+        }
+        if (ObjectUtil.isNull(current.getLoginTime())) {
+            current.setLoginTime(previous.getLoginTime());
+        }
+        if (ObjectUtil.isNull(current.getExpireTime())) {
+            current.setExpireTime(previous.getExpireTime());
+        }
     }
 
     /**
@@ -141,6 +188,10 @@ public class LoginHelper {
      * 获取用户id
      */
     public static Long getUserId() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && ObjectUtil.isNotNull(loginUser.getUserId())) {
+            return loginUser.getUserId();
+        }
         return Convert.toLong(getExtra(USER_KEY));
     }
 
@@ -148,13 +199,28 @@ public class LoginHelper {
      * 获取用户id
      */
     public static String getUserIdStr() {
-        return Convert.toStr(getExtra(USER_KEY));
+        return Convert.toStr(getUserId());
+    }
+
+    /**
+     * 获取当前全局账号ID。
+     */
+    public static Long getGlobalUserId() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && ObjectUtil.isNotNull(loginUser.getGlobalUserId())) {
+            return loginUser.getGlobalUserId();
+        }
+        return Convert.toLong(getExtra(GLOBAL_USER_KEY));
     }
 
     /**
      * 获取用户账户
      */
     public static String getUsername() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && StringUtils.isNotBlank(loginUser.getUsername())) {
+            return loginUser.getUsername();
+        }
         return Convert.toStr(getExtra(USER_NAME_KEY));
     }
 
@@ -162,18 +228,21 @@ public class LoginHelper {
      * 获取租户编号。
      */
     public static String getTenantId() {
-        Object tenantId = getExtra(TENANT_KEY);
-        if (tenantId != null) {
-            return Convert.toStr(tenantId);
-        }
         LoginUser loginUser = getLoginUser();
-        return loginUser == null ? null : loginUser.getTenantId();
+        if (ObjectUtil.isNotNull(loginUser) && StringUtils.isNotBlank(loginUser.getTenantId())) {
+            return loginUser.getTenantId();
+        }
+        return Convert.toStr(getExtra(TENANT_KEY));
     }
 
     /**
      * 获取部门ID
      */
     public static Long getDeptId() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && ObjectUtil.isNotNull(loginUser.getDeptId())) {
+            return loginUser.getDeptId();
+        }
         return Convert.toLong(getExtra(DEPT_KEY));
     }
 
@@ -181,6 +250,10 @@ public class LoginHelper {
      * 获取部门名
      */
     public static String getDeptName() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && StringUtils.isNotBlank(loginUser.getDeptName())) {
+            return loginUser.getDeptName();
+        }
         return Convert.toStr(getExtra(DEPT_NAME_KEY));
     }
 
@@ -188,6 +261,10 @@ public class LoginHelper {
      * 获取部门类别编码
      */
     public static String getDeptCategory() {
+        LoginUser loginUser = getLoginUser();
+        if (ObjectUtil.isNotNull(loginUser) && StringUtils.isNotBlank(loginUser.getDeptCategory())) {
+            return loginUser.getDeptCategory();
+        }
         return Convert.toStr(getExtra(DEPT_CATEGORY_KEY));
     }
 

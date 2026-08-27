@@ -10,7 +10,10 @@ import org.dromara.common.tenant.core.TenantEntity;
 import java.time.LocalDateTime;
 
 /**
- * 用户对象 sys_user
+ * 租户成员对象 sys_user。
+ *
+ * <p>用户名、手机号和密码仅保存在 {@link SysGlobalUser}；本表只保存某个全局账号
+ * 在当前租户的成员关系、组织与授权属性。</p>
  *
  * @author Lion Li
  */
@@ -28,14 +31,16 @@ public class SysUser extends TenantEntity {
     private Long userId;
 
     /**
+     * 全局账号ID。
+     *
+     * <p>同一全局账号可在多个租户各拥有一条本地用户记录。</p>
+     */
+    private Long globalUserId;
+
+    /**
      * 部门ID
      */
     private Long deptId;
-
-    /**
-     * 用户账号
-     */
-    private String userName;
 
     /**
      * 用户昵称
@@ -53,11 +58,6 @@ public class SysUser extends TenantEntity {
     private String email;
 
     /**
-     * 手机号码
-     */
-    private String phoneNumber;
-
-    /**
      * 用户性别
      */
     private String gender;
@@ -66,16 +66,6 @@ public class SysUser extends TenantEntity {
      * 用户头像
      */
     private Long avatar;
-
-    /**
-     * 密码
-     */
-    @TableField(
-        insertStrategy = FieldStrategy.NOT_EMPTY,
-        updateStrategy = FieldStrategy.NOT_EMPTY,
-        whereStrategy = FieldStrategy.NOT_EMPTY
-    )
-    private String password;
 
     /**
      * 账号状态（0正常 1停用）

@@ -10,8 +10,21 @@ ALTER TABLE sys_dept ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000';
 CREATE INDEX idx_sys_dept_tenant_id ON sys_dept (tenant_id);
 
 ALTER TABLE sys_user ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000';
-CREATE INDEX idx_sys_user_tenant_user_name ON sys_user (tenant_id, user_name);
-CREATE INDEX idx_sys_user_tenant_phone ON sys_user (tenant_id, phone_number);
+
+-- 全量初始化脚本已包含 global_user_id；旧库在执行 6.0.1 前没有此列。
+-- 因此仅当该列已存在时创建成员关系唯一索引，旧库仍由 6.0.1 脚本创建。
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'sys_user'
+          AND column_name = 'global_user_id'
+    ) THEN
+        EXECUTE 'CREATE UNIQUE INDEX uk_sys_user_tenant_global_user ON sys_user (tenant_id, global_user_id)';
+    END IF;
+END $$;
 
 ALTER TABLE sys_post ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000';
 CREATE INDEX idx_sys_post_tenant_id ON sys_post (tenant_id);

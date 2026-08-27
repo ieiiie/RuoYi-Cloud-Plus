@@ -2,6 +2,7 @@ package org.dromara.auth.controller;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.util.ObjectUtil;
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import me.zhyd.oauth.model.AuthResponse;
@@ -10,6 +11,7 @@ import me.zhyd.oauth.request.AuthRequest;
 import me.zhyd.oauth.utils.AuthStateUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.dromara.auth.domain.vo.LoginVo;
+import org.dromara.auth.domain.vo.TenantLoginVo;
 import org.dromara.auth.form.RegisterBody;
 import org.dromara.auth.form.SocialLoginBody;
 import org.dromara.auth.service.IAuthStrategy;
@@ -32,7 +34,11 @@ import org.dromara.resource.api.RemoteMessageService;
 import org.dromara.system.api.RemoteClientService;
 import org.dromara.system.api.RemoteConfigService;
 import org.dromara.system.api.RemoteSocialService;
+import org.dromara.system.api.RemoteUserService;
+import org.dromara.system.api.domain.bo.RemoteSocialBo;
 import org.dromara.system.api.domain.vo.RemoteClientVo;
+import org.dromara.system.api.domain.vo.RemoteSocialVo;
+import org.dromara.system.api.model.LoginUser;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -63,6 +69,8 @@ public class TokenController {
     private final RemoteClientService remoteClientService;
     @DubboReference
     private final RemoteSocialService remoteSocialService;
+    @DubboReference
+    private final RemoteUserService remoteUserService;
     @DubboReference(stub = "true")
     private final RemoteMessageService remoteMessageService;
 
@@ -99,6 +107,33 @@ public class TokenController {
                 List.of(userId), DateUtils.getTodayHour(new Date()) + "好，欢迎登录 RuoYi-Cloud-Plus 后台管理系统"));
         }, 5, TimeUnit.SECONDS);
         return R.ok(loginVo);
+    }
+
+    /**
+     * 查询当前全局账号可进入的有效租户。
+     *
+     * <p>网关转发时会去掉 {@code /auth} 前缀，因此外部地址为
+     * {@code GET /auth/tenant/list}。</p>
+     */
+    @SaCheckLogin
+    @GetMapping("/tenant/list")
+    public R<List<TenantLoginVo>> tenantList() {
+        return R.ok(IAuthStrategy.toTenantVoList(
+            remoteUserService.listTenantUsers(LoginHelper.getGlobalUserId())));
+    }
+
+    /**
+     * 在不换发 token 的情况下切换当前浏览器会话的租户成员身份。
+     */
+    @SaCheckLogin
+    @PutMapping("/tenant/{tenantId}")
+    public R<TenantLoginVo> switchTenant(@PathVariable String tenantId) {
+        LoginUser loginUser = remoteUserService.getUserInfoByGlobalUserId(
+            LoginHelper.getGlobalUserId(), tenantId);
+        // 平台管理员的临时数据视图不能覆盖用户主动选择的成员租户。
+        TenantHelper.clearDynamic();
+        LoginHelper.updateLoginUser(loginUser);
+        return R.ok(IAuthStrategy.toTenantVo(loginUser));
     }
 
     /**
@@ -151,6 +186,14 @@ public class TokenController {
      */
     @DeleteMapping(value = "/unlock/{socialId}")
     public R<Void> unlockSocial(@PathVariable Long socialId) {
+        RemoteSocialBo query = new RemoteSocialBo();
+        query.setGlobalUserId(LoginHelper.getGlobalUserId());
+        boolean belongsToCurrentAccount = remoteSocialService.queryList(query).stream()
+            .map(RemoteSocialVo::getId)
+            .anyMatch(socialId::equals);
+        if (!belongsToCurrentAccount) {
+            return R.fail("无权取消该第三方授权");
+        }
         Boolean rows = remoteSocialService.deleteWithValidById(socialId);
         return rows ? R.ok() : R.fail("取消授权失败");
     }

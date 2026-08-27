@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  *     .voList();
  *
  * userMapper.lambda()
- *     .select(SysUser::getUserId, SysUser::getUserName)
+ *     .select(SysUser::getUserId, SysUser::getNickName)
  *     .selectSub(SysUserRole.class, sub -> sub
  *         .selectCountAll()
  *         .eqColumn(SysUserRole::getUserId, SysUser::getUserId),

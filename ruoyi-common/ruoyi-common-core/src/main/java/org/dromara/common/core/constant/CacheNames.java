@@ -27,14 +27,14 @@ public interface CacheNames {
     String SYS_CONFIG = "sys_config";
 
     /**
-     * 数据字典
+     * 全局数据字典
      */
-    String SYS_DICT = "sys_dict";
+    String SYS_DICT = GlobalConstants.GLOBAL_REDIS_KEY + "sys_dict";
 
     /**
-     * 数据字典类型
+     * 全局数据字典类型
      */
-    String SYS_DICT_TYPE = "sys_dict_type";
+    String SYS_DICT_TYPE = GlobalConstants.GLOBAL_REDIS_KEY + "sys_dict_type";
 
     /**
      * 客户端

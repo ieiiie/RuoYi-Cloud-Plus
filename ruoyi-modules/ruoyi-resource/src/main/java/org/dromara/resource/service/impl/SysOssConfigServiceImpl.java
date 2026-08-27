@@ -20,6 +20,7 @@ import org.dromara.common.mybatis.core.query.QueryBuilder;
 import org.dromara.common.oss.constant.OssConstant;
 import org.dromara.common.redis.utils.CacheUtils;
 import org.dromara.common.redis.utils.RedisUtils;
+import org.dromara.common.tenant.helper.TenantHelper;
 import org.dromara.resource.domain.SysOssConfig;
 import org.dromara.resource.domain.bo.SysOssConfigBo;
 import org.dromara.resource.domain.vo.SysOssConfigVo;
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 对象存储配置Service业务层处理
@@ -51,7 +53,8 @@ public class SysOssConfigServiceImpl implements ISysOssConfigService {
      */
     @Override
     public void init() {
-        List<SysOssConfig> list = ossConfigMapper.selectList();
+        // sys_oss_config 是平台全局表；应用启动阶段没有 HTTP 登录上下文，需显式跳过租户行级拦截。
+        List<SysOssConfig> list = TenantHelper.ignore((Supplier<List<SysOssConfig>>) ossConfigMapper::selectList);
         // 加载OSS初始化配置
         for (SysOssConfig config : list) {
             String configKey = config.getConfigKey();

@@ -23,6 +23,11 @@ public class RemoteSocialVo implements Serializable {
     private Long id;
 
     /**
+     * 全局账号ID。
+     */
+    private Long globalUserId;
+
+    /**
      * 用户ID
      */
     private Long userId;

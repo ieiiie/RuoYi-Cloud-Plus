@@ -10,8 +10,21 @@ ALTER TABLE sys_dept ADD (tenant_id varchar2(20) DEFAULT '000000' NOT NULL);
 CREATE INDEX idx_sys_dept_tenant_id ON sys_dept (tenant_id);
 
 ALTER TABLE sys_user ADD (tenant_id varchar2(20) DEFAULT '000000' NOT NULL);
-CREATE INDEX idx_sys_user_tenant_name ON sys_user (tenant_id, user_name);
-CREATE INDEX idx_sys_user_tenant_phone ON sys_user (tenant_id, phone_number);
+
+-- 全量初始化脚本已包含 GLOBAL_USER_ID；旧库在执行 6.0.1 前没有此列。
+-- 因此仅当该列已存在时创建成员关系唯一索引，旧库仍由 6.0.1 脚本创建。
+DECLARE
+    v_column_count NUMBER;
+BEGIN
+    SELECT COUNT(*) INTO v_column_count
+    FROM user_tab_columns
+    WHERE table_name = 'SYS_USER'
+      AND column_name = 'GLOBAL_USER_ID';
+    IF v_column_count > 0 THEN
+        EXECUTE IMMEDIATE 'CREATE UNIQUE INDEX uk_sys_user_tenant_global_user ON sys_user (tenant_id, global_user_id)';
+    END IF;
+END;
+/
 
 ALTER TABLE sys_post ADD (tenant_id varchar2(20) DEFAULT '000000' NOT NULL);
 CREATE INDEX idx_sys_post_tenant_id ON sys_post (tenant_id);

@@ -5,7 +5,6 @@ import cn.hutool.crypto.digest.BCrypt;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.dromara.common.core.domain.R;
-import org.dromara.common.core.utils.StringUtils;
 import org.dromara.common.encrypt.annotation.ApiEncrypt;
 import org.dromara.common.log.annotation.Log;
 import org.dromara.common.log.enums.BusinessType;
@@ -13,11 +12,13 @@ import org.dromara.common.mybatis.helper.DataPermissionHelper;
 import org.dromara.common.redis.annotation.RepeatSubmit;
 import org.dromara.common.satoken.utils.LoginHelper;
 import org.dromara.common.web.core.BaseController;
+import org.dromara.system.domain.SysGlobalUser;
 import org.dromara.system.domain.bo.SysUserBo;
 import org.dromara.system.domain.bo.SysUserProfileBo;
 import org.dromara.system.domain.vo.ProfileUserVo;
 import org.dromara.system.domain.vo.SysUserVo;
 import org.dromara.system.service.ISysUserService;
+import org.dromara.system.service.ISysGlobalUserService;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 public class SysProfileController extends BaseController {
 
     private final ISysUserService userService;
+    private final ISysGlobalUserService globalUserService;
 
     /**
      * 个人信息
@@ -57,13 +59,7 @@ public class SysProfileController extends BaseController {
     public R<Void> updateProfile(@Validated @RequestBody SysUserProfileBo profile) {
         SysUserBo user = BeanUtil.toBean(profile, SysUserBo.class);
         user.setUserId(LoginHelper.getUserId());
-        String username = LoginHelper.getUsername();
-        if (StringUtils.isNotEmpty(user.getPhoneNumber()) && !userService.checkPhoneUnique(user)) {
-            return R.fail("修改用户'" + username + "'失败，手机号码已存在");
-        }
-        if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(user)) {
-            return R.fail("修改用户'" + username + "'失败，邮箱账号已存在");
-        }
+        // 手机号、邮箱是全局唯一字段，由全局账号服务统一校验并同步全部租户镜像。
         int rows = DataPermissionHelper.ignore(() -> userService.updateUserProfile(user));
         if (rows > 0) {
             return R.ok();
@@ -82,7 +78,11 @@ public class SysProfileController extends BaseController {
     @PutMapping("/updatePwd")
     public R<Void> updatePwd(@Validated @RequestBody SysUserPasswordBo bo) {
         SysUserVo user = userService.selectUserById(LoginHelper.getUserId());
-        String password = user.getPassword();
+        SysGlobalUser globalUser = globalUserService.queryById(LoginHelper.getGlobalUserId());
+        if (globalUser == null) {
+            return R.fail("全局账号不存在");
+        }
+        String password = globalUser.getPassword();
         if (!BCrypt.checkpw(bo.oldPassword(), password)) {
             return R.fail("修改密码失败，旧密码错误");
         }

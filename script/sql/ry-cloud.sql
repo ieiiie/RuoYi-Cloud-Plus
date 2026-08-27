@@ -1,3 +1,14 @@
+-- -----------------------------------------------------------------------------
+-- RuoYi-Cloud-Plus MySQL 完整初始化脚本。
+-- 已合并 6.0.0 多租户、6.0.1 全局账号、6.0.2 全局字典、6.0.3 菜单清理与
+-- 6.0.4 Nacos 控制台菜单清理；新库仅执行本文件，
+-- 无需再执行 update_6.0.0-tenant.sql、update_6.0.1-global-user.sql 或
+-- update_6.0.2-global-dict.sql、update_6.0.3-remove-system-tool-plus-menu.sql、
+-- update_6.0.4-remove-nacos-console-menu.sql。
+-- -----------------------------------------------------------------------------
+
+SET NAMES utf8mb4;
+
 -- ----------------------------
 -- 第三方平台授权表
 -- ----------------------------
@@ -33,6 +44,71 @@ create table sys_social
     del_flag           char(1)          default '0'     comment '删除标志（0代表存在 1代表删除）',
     PRIMARY KEY (id)
 ) engine=innodb comment = '社会化关系表';
+
+-- ----------------------------
+-- 全局账号表：密码与基础资料只保存一份，不参与 tenant_id 行级隔离
+-- ----------------------------
+create table sys_global_user (
+  global_user_id bigint(20)      not null                   comment '全局账号ID',
+  user_name      varchar(30)     not null                   comment '用户账号',
+  nick_name      varchar(30)     not null                   comment '用户昵称',
+  user_type      varchar(10)     not null default 'sys_user' comment '用户类型',
+  email          varchar(50)     default null               comment '用户邮箱',
+  phone_number   varchar(11)     default null               comment '手机号码',
+  gender         char(1)         default '0'                comment '用户性别（0男 1女 2未知）',
+  avatar         bigint(20)      default null               comment '头像 OSS ID',
+  password       varchar(100)    not null                   comment '密码',
+  status         char(1)         not null default '0'        comment '账号状态（0正常 1停用）',
+  del_flag       char(1)         not null default '0'        comment '删除标志（0代表存在 1代表删除）',
+  create_dept    bigint(20)      default null               comment '创建部门',
+  create_by      bigint(20)      default null               comment '创建者',
+  create_time    datetime                                   comment '创建时间',
+  update_by      bigint(20)      default null               comment '更新者',
+  update_time    datetime                                   comment '更新时间',
+  remark         varchar(500)    default null               comment '备注',
+  primary key (global_user_id),
+  unique key uk_sys_global_user_name  (user_name),
+  unique key uk_sys_global_user_phone (phone_number),
+  unique key uk_sys_global_user_email (email)
+) engine=innodb comment = '全局账号表';
+
+-- ----------------------------
+-- 全局第三方账号绑定表：社交与小程序登录先定位全局账号
+-- ----------------------------
+create table sys_global_social (
+  id                 bigint(20)      not null                   comment '主键',
+  global_user_id     bigint(20)      not null                   comment '全局账号ID',
+  auth_id            varchar(255)    not null                   comment '平台+平台唯一id',
+  source             varchar(255)    not null                   comment '用户来源',
+  open_id            varchar(255)    default null               comment '平台编号唯一id',
+  user_name          varchar(30)     default null               comment '登录账号',
+  nick_name          varchar(30)     default null               comment '用户昵称',
+  email              varchar(255)    default null               comment '用户邮箱',
+  avatar             varchar(500)    default null               comment '头像地址',
+  access_token       varchar(2000)   default null               comment '用户的授权令牌',
+  expire_in          int             default null               comment '用户的授权令牌有效期',
+  refresh_token      varchar(2000)   default null               comment '刷新令牌',
+  access_code        varchar(255)    default null               comment '平台授权信息',
+  union_id           varchar(255)    default null               comment '用户 unionid',
+  scope              varchar(255)    default null               comment '授权范围',
+  token_type         varchar(255)    default null               comment '令牌类型',
+  id_token           varchar(2000)   default null               comment 'id token',
+  mac_algorithm      varchar(255)    default null               comment '小米平台算法',
+  mac_key            varchar(255)    default null               comment '小米平台密钥',
+  code               varchar(255)    default null               comment '授权 code',
+  oauth_token        varchar(255)    default null               comment 'OAuth token',
+  oauth_token_secret varchar(255)    default null               comment 'OAuth token secret',
+  create_dept        bigint(20)      default null               comment '创建部门',
+  create_by          bigint(20)      default null               comment '创建者',
+  create_time        datetime                                   comment '创建时间',
+  update_by          bigint(20)      default null               comment '更新者',
+  update_time        datetime                                   comment '更新时间',
+  del_flag           char(1)         not null default '0'        comment '删除标志（0代表存在 1代表删除）',
+  primary key (id),
+  unique key uk_sys_global_social_auth (source, auth_id),
+  unique key uk_sys_global_social_open (open_id),
+  key idx_sys_global_social_user (global_user_id)
+) engine=innodb comment = '全局第三方账号绑定表';
 
 -- ----------------------------
 -- 1、部门表
@@ -80,15 +156,13 @@ insert into sys_dept values(1761000000000000109, 1761000000000000102, '0,1761000
 -- ----------------------------
 create table sys_user (
   user_id           bigint(20)      not null                   comment '用户ID',
+  global_user_id    bigint(20)      default null               comment '全局账号ID',
   dept_id           bigint(20)      default null               comment '部门ID',
-  user_name         varchar(30)     not null                   comment '用户账号',
   nick_name         varchar(30)     not null                   comment '用户昵称',
   user_type         varchar(10)     default 'sys_user'         comment '用户类型（sys_user系统用户）',
   email             varchar(50)     default ''                 comment '用户邮箱',
-  phone_number      varchar(11)     default ''                 comment '手机号码',
   gender            char(1)         default '0'                comment '用户性别（0男 1女 2未知）',
   avatar            bigint(20)                                 comment '头像地址',
-  password          varchar(100)    default ''                 comment '密码',
   status            char(1)         default '0'                comment '账号状态（0正常 1停用）',
   del_flag          char(1)         default '0'                comment '删除标志（0代表存在 1代表删除）',
   login_ip          varchar(128)    default ''                 comment '最后登录IP',
@@ -102,16 +176,35 @@ create table sys_user (
   primary key (user_id),
   key idx_sys_user_dept_id   (dept_id),
   key idx_sys_user_create_by (create_by),
-  key idx_sys_user_user_name (user_name),
-  key idx_sys_user_phone     (phone_number)
+  key idx_sys_user_global_user_id (global_user_id)
 ) engine=innodb comment = '用户信息表';
 
 -- ----------------------------
 -- 初始化-用户信息表数据
 -- ----------------------------
-insert into sys_user values(1761100000000000001, 1761000000000000103, 'admin', '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '15888888888', '1', null, '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), null, null, '管理员');
-insert into sys_user values(1761100000000000003, 1761000000000000108, 'test', '本部门及以下 密码666666', 'sys_user', '', '', '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000003, sysdate(), null);
-insert into sys_user values(1761100000000000004, 1761000000000000102, 'test1', '仅本人 密码666666', 'sys_user', '', '', '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000004, sysdate(), null);
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000001, 1761000000000000103, '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '1', null, '0', '0',
+        '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), null, null,
+        '管理员', 1761100000000000001);
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000003, 1761000000000000108, '本部门及以下 密码666666', 'sys_user', '', '0', null, '0', '0',
+        '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000003, sysdate(),
+        null, 1761100000000000003);
+insert into sys_user (user_id, dept_id, nick_name, user_type, email, gender, avatar, status, del_flag,
+                      login_ip, login_date, create_dept, create_by, create_time, update_by, update_time,
+                      remark, global_user_id)
+values (1761100000000000004, 1761000000000000102, '仅本人 密码666666', 'sys_user', '', '0', null, '0', '0',
+        '127.0.0.1', sysdate(), 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000004, sysdate(),
+        null, 1761100000000000004);
+
+-- 初始化全局账号（全量脚本的示例用户与本地 sys_user 一一对应）。
+insert into sys_global_user values(1761100000000000001, 'admin', '疯狂的狮子Li', 'sys_user', 'crazyLionLi@163.com', '15888888888', '1', null, '$2a$10$7JB720yubVSZvUI0rEqK/.VqGOZTH.ulu33dHOiBE8ByOhJIrdAu2', '0', '0', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '管理员');
+insert into sys_global_user values(1761100000000000003, 'test', '本部门及以下 密码666666', 'sys_user', null, null, '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000003, sysdate(), null);
+insert into sys_global_user values(1761100000000000004, 'test1', '仅本人 密码666666', 'sys_user', null, null, '0', null, '$2a$10$b8yUzN0C71sbz.PhNOCgJe.Tu1yWC3RNrTyjSQ8p1W0.aaUXUJ.Ne', '0', '0', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000004, sysdate(), null);
 
 -- ----------------------------
 -- 3、岗位信息表
@@ -211,21 +304,18 @@ create table sys_menu (
 -- 一级菜单
 insert into sys_menu values(1761400000000000001, '系统管理', 0, 1, 'system', null, '', 'N', 'Y', 'M', '0', '0', '', 'system', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '系统管理目录');
 insert into sys_menu values(1761400000000000002, '系统监控', 0, 3, 'monitor', null, '', 'N', 'Y', 'M', '0', '0', '', 'monitor', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '系统监控目录');
-insert into sys_menu values(1761400000000000003, '系统工具', 0, 4, 'tool', null, '', 'N', 'Y', 'M', '0', '0', '', 'tool', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '系统工具目录');
-insert into sys_menu values(1761400000000000004, 'PLUS官网', 0, 9, 'https://gitee.com/dromara/RuoYi-Cloud-Plus', null, '', 'Y', 'Y', 'M', '0', '0', '', 'guide', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, 'RuoYi-Vue-Plus官网地址');
 -- 二级菜单
 insert into sys_menu values(1761400000000000100, '用户管理', 1761400000000000001, 1, 'user', 'system/user/index', '', 'N', 'Y', 'C', '0', '0', 'system:user:list', 'user', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '用户管理菜单');
 insert into sys_menu values(1761400000000000101, '角色管理', 1761400000000000001, 2, 'role', 'system/role/index', '', 'N', 'Y', 'C', '0', '0', 'system:role:list', 'peoples', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '角色管理菜单');
 insert into sys_menu values(1761400000000000102, '菜单管理', 1761400000000000001, 3, 'menu', 'system/menu/index', '', 'N', 'Y', 'C', '0', '0', 'system:menu:list', 'tree-table', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '菜单管理菜单');
 insert into sys_menu values(1761400000000000103, '部门管理', 1761400000000000001, 4, 'dept', 'system/dept/index', '', 'N', 'Y', 'C', '0', '0', 'system:dept:list', 'tree', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '部门管理菜单');
 insert into sys_menu values(1761400000000000104, '岗位管理', 1761400000000000001, 5, 'post', 'system/post/index', '', 'N', 'Y', 'C', '0', '0', 'system:post:list', 'post', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '岗位管理菜单');
-insert into sys_menu values(1761400000000000105, '字典管理', 1761400000000000001, 6, 'dict', 'system/dict/index', '', 'N', 'Y', 'C', '0', '0', 'system:dict:list', 'dict', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '字典管理菜单');
+insert into sys_menu values(1761400000000000105, '全局字典', 1761400000000000001, 6, 'dict', 'system/dict/index', '', 'N', 'Y', 'C', '0', '0', 'system:dict:list', 'dict', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '全局字典菜单');
 insert into sys_menu values(1761400000000000106, '参数设置', 1761400000000000001, 7, 'config', 'system/config/index', '', 'N', 'Y', 'C', '0', '0', 'system:config:list', 'edit', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '参数设置菜单');
 insert into sys_menu values(1761400000000000107, '通知公告', 1761400000000000001, 8, 'notice', 'system/notice/index', '', 'N', 'Y', 'C', '0', '0', 'system:notice:list', 'message', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '通知公告菜单');
 insert into sys_menu values(1761400000000000108, '日志管理', 1761400000000000001, 9, 'log', '', '', 'N', 'Y', 'M', '0', '0', '', 'log', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '日志管理菜单');
 insert into sys_menu values(1761400000000000109, '在线用户', 1761400000000000002, 1, 'online', 'monitor/online/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:online:list', 'online', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '在线用户菜单');
 insert into sys_menu values(1761400000000000113, '缓存监控', 1761400000000000002, 5, 'cache', 'monitor/cache/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:cache:list', 'redis', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '缓存监控菜单');
-insert into sys_menu values(1761400000000000112, 'Nacos控制台', 1761400000000000002, 4, 'http://localhost:8848/nacos', '', '', 'Y', 'Y', 'C', '0', '0', 'monitor:nacos:list', 'nacos', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '服务治理菜单');
 insert into sys_menu values(1761400000000000123, '客户端管理', 1761400000000000001, 11, 'client', 'system/client/index', '', 'N', 'Y', 'C', '0', '0', 'system:client:list', 'international', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '客户端管理菜单');
 insert into sys_menu values(1761400000000000130, '分配用户', 1761400000000000001, 2, 'role-auth/user/:roleId', 'system/role/authUser', '', 'N', 'N', 'C', '1', '0', 'system:role:edit', '#', '/system/role', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000000131, '分配角色', 1761400000000000001, 1, 'user-auth/role/:userId', 'system/user/authRole', '', 'N', 'N', 'C', '1', '0', 'system:user:edit', '#', '/system/user', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
@@ -267,7 +357,7 @@ insert into sys_menu values(1761400000000001022, '岗位新增', 176140000000000
 insert into sys_menu values(1761400000000001023, '岗位修改', 1761400000000000104, 3, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:post:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001024, '岗位删除', 1761400000000000104, 4, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:post:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001025, '岗位导出', 1761400000000000104, 5, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:post:export', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
--- 字典管理按钮
+-- 全局字典按钮
 insert into sys_menu values(1761400000000001026, '字典查询', 1761400000000000105, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:dict:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001027, '字典新增', 1761400000000000105, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:dict:add', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001028, '字典修改', 1761400000000000105, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:dict:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
@@ -804,6 +894,156 @@ create table sys_client (
 insert into sys_client values (1762000000000000001, 'e5cd7e4891bf95d1d19206ce24a7b32e', 'pc', 'pc123', 'password,social', 'pc', null, null, 1800, 604800, 0, 0, 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate());
 insert into sys_client values (1762000000000000002, '428a8310cd442757ae699df5d894f051', 'app', 'app123', 'password,sms,social', 'android', null, null, 1800, 604800, 0, 0, 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate());
 
+-- -----------------------------------------------------------------------------
+-- 多租户最终结构（已合并自 update_6.0.0-tenant.sql）。
+-- 上方基础数据先按原始列顺序写入；以下新增列均带默认租户，执行完本文件后所有
+-- 租户隔离表均处于最终结构，无需再执行升级 SQL。
+-- -----------------------------------------------------------------------------
+
+ALTER TABLE sys_social
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER id,
+    ADD KEY idx_sys_social_tenant_id (tenant_id);
+
+ALTER TABLE sys_dept
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER dept_id,
+    ADD KEY idx_sys_dept_tenant_id (tenant_id);
+
+ALTER TABLE sys_user
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER user_id,
+    ADD UNIQUE KEY uk_sys_user_tenant_global_user (tenant_id, global_user_id);
+
+ALTER TABLE sys_post
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER post_id,
+    ADD KEY idx_sys_post_tenant_id (tenant_id);
+
+ALTER TABLE sys_role
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER role_id,
+    ADD KEY idx_sys_role_tenant_role_key (tenant_id, role_key);
+
+ALTER TABLE sys_oper_log
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER oper_id,
+    ADD KEY idx_sys_oper_log_tenant_time (tenant_id, oper_time);
+
+ALTER TABLE sys_config
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER config_id,
+    ADD KEY idx_sys_config_tenant_key (tenant_id, config_key);
+
+ALTER TABLE sys_login_info
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER info_id,
+    ADD KEY idx_sys_login_info_tenant_time (tenant_id, login_time);
+
+ALTER TABLE sys_notice
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER notice_id,
+    ADD KEY idx_sys_notice_tenant_id (tenant_id);
+
+ALTER TABLE sys_message
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER message_id,
+    ADD KEY idx_sys_message_tenant_time (tenant_id, create_time);
+
+ALTER TABLE sys_oss
+    ADD COLUMN tenant_id varchar(20) NOT NULL DEFAULT '000000' COMMENT '租户编号' AFTER oss_id,
+    ADD KEY idx_sys_oss_tenant_id (tenant_id);
+
+-- -----------------------------------------------------------------------------
+-- 租户与套餐主数据。
+-- -----------------------------------------------------------------------------
+
+CREATE TABLE sys_tenant (
+    id                bigint(20)      NOT NULL COMMENT '主键',
+    tenant_id         varchar(20)     NOT NULL COMMENT '租户编号',
+    contact_user_name varchar(50)     NOT NULL COMMENT '联系人',
+    contact_phone     varchar(20)     NOT NULL COMMENT '联系电话',
+    company_name      varchar(100)    NOT NULL COMMENT '企业名称',
+    license_number    varchar(100)    DEFAULT NULL COMMENT '统一社会信用代码',
+    address           varchar(255)    DEFAULT NULL COMMENT '地址',
+    domain            varchar(255)    DEFAULT NULL COMMENT '域名',
+    intro             varchar(1000)   DEFAULT NULL COMMENT '企业简介',
+    package_id        bigint(20)      DEFAULT NULL COMMENT '租户套餐编号',
+    expire_time       datetime        DEFAULT NULL COMMENT '过期时间',
+    account_count     bigint(20)      NOT NULL DEFAULT -1 COMMENT '用户数量上限，-1表示不限制',
+    status            char(1)         NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+    del_flag          char(1)         NOT NULL DEFAULT '0' COMMENT '删除标志（0存在 1删除）',
+    create_dept       bigint(20)      DEFAULT NULL COMMENT '创建部门',
+    create_by         bigint(20)      DEFAULT NULL COMMENT '创建者',
+    create_time       datetime        DEFAULT NULL COMMENT '创建时间',
+    update_by         bigint(20)      DEFAULT NULL COMMENT '更新者',
+    update_time       datetime        DEFAULT NULL COMMENT '更新时间',
+    remark            varchar(500)    DEFAULT NULL COMMENT '备注',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_sys_tenant_tenant_id (tenant_id),
+    KEY idx_sys_tenant_status (status)
+) ENGINE=InnoDB COMMENT='租户表';
+
+CREATE TABLE sys_tenant_package (
+    package_id          bigint(20)    NOT NULL COMMENT '套餐主键',
+    package_name        varchar(100)  NOT NULL COMMENT '套餐名称',
+    menu_ids            varchar(4000) DEFAULT '' COMMENT '关联菜单ID，逗号分隔',
+    menu_check_strictly tinyint(1)    NOT NULL DEFAULT 1 COMMENT '菜单树是否父子联动',
+    status              char(1)       NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+    del_flag            char(1)       NOT NULL DEFAULT '0' COMMENT '删除标志（0存在 1删除）',
+    create_dept         bigint(20)    DEFAULT NULL COMMENT '创建部门',
+    create_by           bigint(20)    DEFAULT NULL COMMENT '创建者',
+    create_time         datetime      DEFAULT NULL COMMENT '创建时间',
+    update_by           bigint(20)    DEFAULT NULL COMMENT '更新者',
+    update_time         datetime      DEFAULT NULL COMMENT '更新时间',
+    remark              varchar(500)  DEFAULT NULL COMMENT '备注',
+    PRIMARY KEY (package_id),
+    KEY idx_sys_tenant_package_status (status)
+) ENGINE=InnoDB COMMENT='租户套餐表';
+
+-- 默认套餐仅包含基础系统菜单；下方新增的租户管理菜单仅授予平台超级管理员。
+SET SESSION group_concat_max_len = 8192;
+INSERT INTO sys_tenant_package
+    (package_id, package_name, menu_ids, menu_check_strictly, status, del_flag,
+     create_dept, create_by, create_time, remark)
+SELECT 1762000000000000001,
+       '默认套餐',
+       COALESCE(GROUP_CONCAT(CAST(menu_id AS CHAR) ORDER BY menu_id SEPARATOR ','), ''),
+       1, '0', '0', 1761000000000000103, 1761100000000000001, SYSDATE(), '默认租户套餐'
+FROM sys_menu;
+
+INSERT INTO sys_tenant
+    (id, tenant_id, contact_user_name, contact_phone, company_name, package_id,
+     account_count, status, del_flag, create_dept, create_by, create_time, remark)
+VALUES
+    (1762000000000000002, '000000', '平台管理员', '15888888888', '默认管理租户',
+     1762000000000000001, -1, '0', '0', 1761000000000000103,
+     1761100000000000001, SYSDATE(), '系统初始化的默认租户');
+
+-- 平台租户管理菜单与按钮权限。
+INSERT INTO sys_menu
+    (menu_id, menu_name, parent_id, order_num, path, component, query_param, is_frame, is_cache,
+     menu_type, visible, status, perms, icon, active_menu, ext, create_dept, create_by, create_time,
+     update_by, update_time, remark)
+VALUES
+    (1761400000000001700, '租户管理', 1761400000000000001, 12, 'tenant', 'system/tenant/index', '', 'N', 'Y', 'C', '0', '0', 'system:tenant:list', 'company', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, '平台租户管理菜单'),
+    (1761400000000001701, '租户查询', 1761400000000001700, 1, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenant:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001702, '租户新增', 1761400000000001700, 2, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenant:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001703, '租户修改', 1761400000000001700, 3, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenant:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001704, '租户删除', 1761400000000001700, 4, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenant:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001705, '租户导出', 1761400000000001700, 5, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenant:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001710, '租户套餐', 1761400000000000001, 13, 'tenant-package', 'system/tenant/package/index', '', 'N', 'Y', 'C', '0', '0', 'system:tenantPackage:list', 'price-tag', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, '平台租户套餐菜单'),
+    (1761400000000001711, '套餐查询', 1761400000000001710, 1, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantPackage:query', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001712, '套餐新增', 1761400000000001710, 2, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantPackage:add', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001713, '套餐修改', 1761400000000001710, 3, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantPackage:edit', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001714, '套餐删除', 1761400000000001710, 4, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantPackage:remove', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, ''),
+    (1761400000000001715, '套餐导出', 1761400000000001710, 5, '', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantPackage:export', '#', '', '', 1761000000000000103, 1761100000000000001, SYSDATE(), NULL, NULL, '');
+
+-- 默认管理租户超级管理员拥有平台级租户管理权限。
+INSERT INTO sys_role_menu (role_id, menu_id) VALUES
+    (1761300000000000001, 1761400000000001700),
+    (1761300000000000001, 1761400000000001701),
+    (1761300000000000001, 1761400000000001702),
+    (1761300000000000001, 1761400000000001703),
+    (1761300000000000001, 1761400000000001704),
+    (1761300000000000001, 1761400000000001705),
+    (1761300000000000001, 1761400000000001710),
+    (1761300000000000001, 1761400000000001711),
+    (1761300000000000001, 1761400000000001712),
+    (1761300000000000001, 1761400000000001713),
+    (1761300000000000001, 1761400000000001714),
+    (1761300000000000001, 1761400000000001715);
+
 
 -- for AT mode you must to init this sql for you business database. the seata server not need it.
 CREATE TABLE IF NOT EXISTS undo_log
@@ -817,4 +1057,3 @@ CREATE TABLE IF NOT EXISTS undo_log
     log_modified  DATETIME(6)  NOT NULL COMMENT 'modify datetime',
     UNIQUE KEY ux_undo_log (xid, branch_id)
 ) ENGINE = InnoDB COMMENT ='AT transaction mode undo table';
-

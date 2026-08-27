@@ -3,6 +3,7 @@ package org.dromara.system.api;
 import org.dromara.common.core.exception.ServiceException;
 import org.dromara.common.core.exception.user.UserException;
 import org.dromara.system.api.domain.bo.RemoteUserBo;
+import org.dromara.system.api.domain.vo.RemoteTenantUserVo;
 import org.dromara.system.api.domain.vo.RemoteUserVo;
 import org.dromara.system.api.model.LoginUser;
 import org.dromara.system.api.model.XcxLoginUser;
@@ -29,7 +30,7 @@ public interface RemoteUserService {
     /**
      * 通过用户名和租户编号查询用户信息。
      *
-     * <p>保留旧方法以兼容已有消费者；多租户登录入口应调用此方法。</p>
+     * <p>保留旧方法以兼容已有消费者；新的全局账号登录入口不应传入租户编号。</p>
      *
      * @param username 用户名
      * @param tenantId 租户编号
@@ -53,6 +54,24 @@ public interface RemoteUserService {
     default LoginUser getUserInfo(Long userId, String tenantId) throws UserException {
         return getUserInfo(userId);
     }
+
+    /**
+     * 通过全局账号ID查询默认可登录租户中的成员信息。
+     *
+     * <p>默认租户按本账号正常成员的 {@code create_time ASC, user_id ASC}
+     * 选择，并跳过已停用或已过期的租户。</p>
+     */
+    LoginUser getUserInfoByGlobalUserId(Long globalUserId) throws UserException;
+
+    /**
+     * 通过全局账号ID查询指定租户中的成员信息。
+     */
+    LoginUser getUserInfoByGlobalUserId(Long globalUserId, String tenantId) throws UserException;
+
+    /**
+     * 查询全局账号可进入的租户成员列表。
+     */
+    List<RemoteTenantUserVo> listTenantUsers(Long globalUserId);
 
     /**
      * 通过手机号查询用户信息

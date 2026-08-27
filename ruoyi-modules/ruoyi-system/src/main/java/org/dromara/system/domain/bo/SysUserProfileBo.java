@@ -29,6 +29,15 @@ public class SysUserProfileBo implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 用户账号。
+     *
+     * <p>账号属于全局资料，修改后会同步所有租户中的展示字段。</p>
+     */
+    @Xss(message = "用户账号不能包含脚本字符")
+    @Size(min = 2, max = 30, message = "用户账号长度必须在{min}到{max}个字符之间")
+    private String userName;
+
+    /**
      * 用户昵称
      */
     @Xss(message = "用户昵称不能包含脚本字符")
