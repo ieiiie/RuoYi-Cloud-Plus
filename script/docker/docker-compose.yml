@@ -1,3 +1,30 @@
+# 本地开发机预算：Docker Desktop 10 GiB，宿主保留 IDE/浏览器/前端余量。
+x-ym-runtime: &ym-runtime
+  restart: unless-stopped
+  init: true
+  cpus: 2
+  mem_limit: 768m
+  mem_reservation: 384m
+  memswap_limit: 1g
+  stop_grace_period: 60s
+  logging: &bounded-logging
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "3"
+  # 使用 exec 让 Java 接收 SIGTERM，不依赖镜像 shell 转发。
+  entrypoint:
+    - /bin/bash
+    - -ec
+    - exec java -Djava.security.egd=file:/dev/./urandom -Dserver.port=$${SERVER_PORT} $${JAVA_OPTS} -jar app.jar
+  # 仅检查无需鉴权的 HTTP 存活；不绕过 Actuator 授权。
+  healthcheck:
+    test: ["CMD-SHELL", "curl --fail --silent --max-time 4 http://127.0.0.1:$${SERVER_PORT}/ >/dev/null"]
+    interval: 20s
+    timeout: 5s
+    start_period: 120s
+    retries: 5
+
 services:
   mysql:
     image: mysql:8.4.9
@@ -6,7 +33,7 @@ services:
       # 时区上海
       TZ: Asia/Shanghai
       # root 密码
-      MYSQL_ROOT_PASSWORD: ruoyi123
+      MYSQL_ROOT_PASSWORD: ${DOCKER_COMPOSE_MYSQL_ROOT_PASSWORD}
       # 初始化数据库
       MYSQL_DATABASE: ry-cloud
     ports:
@@ -41,9 +68,9 @@ services:
       JVM_XMS: 256m
       JVM_XMX: 512m
       # 认证相关密钥 自行替换
-      NACOS_AUTH_TOKEN: rE7bYayhpvduYwCxuhckybEPDXyna6xwm5m7MZjtjrdXjVxAbXAMccXHyaJvB346
-      NACOS_AUTH_IDENTITY_KEY: ruoyi-vue-plus-key
-      NACOS_AUTH_IDENTITY_VALUE: ruoyi-vue-plus-value
+      NACOS_AUTH_TOKEN: ${DOCKER_COMPOSE_NACOS_AUTH_TOKEN}
+      NACOS_AUTH_IDENTITY_KEY: ym-vue-plus-key
+      NACOS_AUTH_IDENTITY_VALUE: ym-vue-plus-value
     volumes:
       - /docker/nacos/logs/:/home/nacos/logs
       # 默认单机模式 使用 mysql 等按 nacos 文档在配置文件内修改 所有配置均可在配置文件修改
@@ -67,6 +94,44 @@ services:
     privileged: true
     network_mode: "host"
 
+  snail-job-server:
+    image: opensnail/snail-job:2.0.2
+    container_name: snail-job-server
+    restart: unless-stopped
+    init: true
+    cpus: 2
+    mem_limit: 1g
+    mem_reservation: 512m
+    memswap_limit: 1280m
+    stop_grace_period: 60s
+    logging: *bounded-logging
+    # 镜像 Cmd 不读取 JAVA_OPTS，显式覆盖为有界 G1 进程。
+    command: ["java", "-Xms128m", "-Xmx384m", "-Xss512k", "-XX:MaxMetaspaceSize=192m", "-XX:ReservedCodeCacheSize=64m", "-XX:MaxDirectMemorySize=64m", "-XX:ActiveProcessorCount=2", "-XX:+UseG1GC", "-XX:+ExitOnOutOfMemoryError", "-jar", "app.jar"]
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "--max-time", "4", "http://127.0.0.1:8089/snail-job/"]
+      interval: 20s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+    environment:
+      TZ: Asia/Shanghai
+      # 控制台在容器内使用独立端口，仅映射到测试宿主机回环地址。
+      SERVER_PORT: 8089
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/snail_job?useSSL=false&characterEncoding=utf8&useUnicode=true&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${SNAIL_JOB_DB_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${SNAIL_JOB_DB_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+    # 控制台仅监听测试宿为回环地址，不加入 Gateway 路由。
+    ports:
+      - "127.0.0.1:8089:8089"
+      - "127.0.0.1:17888:17888"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - snail-job-logs:/snail-job/logs
+    depends_on:
+      - mysql
+
   minio:
     # pgsty 开源社区 fork 重新维护的最新版 minio
     image: pgsty/minio:RELEASE.2026-04-17T00-00-00Z
@@ -82,7 +147,7 @@ services:
       # 管理后台用户名
       MINIO_ROOT_USER: ruoyi
       # 管理后台密码，最小8个字符
-      MINIO_ROOT_PASSWORD: ruoyi123
+      MINIO_ROOT_PASSWORD: ${DOCKER_COMPOSE_MINIO_ROOT_PASSWORD}
       # https需要指定域名
       #MINIO_SERVER_URL: "https://xxx.com:9000"
       #MINIO_BROWSER_REDIRECT_URL: "https://xxx.com:9001"
@@ -139,70 +204,167 @@ services:
     privileged: true
     network_mode: "host"
 
-  ruoyi-gateway:
-    image: ruoyi/ruoyi-gateway:6.0.0
-    container_name: ruoyi-gateway
+  ym-gateway:
+    <<: *ym-runtime
+    image: ym-gateway:tenant-session-3a31725dfe8b
+    container_name: ym-gateway
+    restart: unless-stopped
     environment:
       # 时区上海
       TZ: Asia/Shanghai
+      # bridge 网络下通过宿主网关访问 Nacos
+      SPRING_CLOUD_NACOS_SERVER_ADDR: host.docker.internal:8848
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+    mem_limit: 768m
     ports:
-      - "8080:8080"
+      - "127.0.0.1:18081:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # 配置文件
-      - /docker/ruoyi-gateway/logs/:/ruoyi/gateway/logs
+      - ym-gateway-logs:/ym/gateway/logs
       # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
+      - ym-skywalking-agent:/ym/skywalking/agent
     privileged: true
-    network_mode: "host"
 
-  ruoyi-auth:
-    image: ruoyi/ruoyi-auth:6.0.0
-    container_name: ruoyi-auth
+  ym-auth:
+    <<: *ym-runtime
+    image: ym-auth:tenant-session-917c3764c614
+    container_name: ym-auth
+    restart: unless-stopped
     environment:
       # 时区上海
       TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+    mem_limit: 768m
     ports:
       - "9210:9210"
     volumes:
       # 配置文件
-      - /docker/ruoyi-auth/logs/:/ruoyi/auth/logs
+      - ym-auth-logs:/ym/auth/logs
       # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
+      - ym-skywalking-agent:/ym/skywalking/agent
     privileged: true
     network_mode: "host"
 
-  ruoyi-system:
-    image: ruoyi/ruoyi-system:6.0.0
-    container_name: ruoyi-system
+  ym-system:
+    <<: *ym-runtime
+    image: ym-system:tenant-session-cd02698ed6f9
+    container_name: ym-system
+    restart: unless-stopped
     environment:
       # 时区上海
       TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+    mem_limit: 768m
     ports:
       - "9201:9201"
     volumes:
       # 配置文件
-      - /docker/ruoyi-system/logs/:/ruoyi/system/logs
+      - ym-system-logs:/ym/system/logs
       # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
+      - ym-skywalking-agent:/ym/skywalking/agent
     privileged: true
     network_mode: "host"
 
-  ruoyi-resource:
-    image: ruoyi/ruoyi-resource:6.0.0
-    container_name: ruoyi-resource
+  ym-dbo:
+    <<: *ym-runtime
+    image: ym-dbo:tenant-session-dcb5e90a3c8f
+    container_name: ym-dbo
+    restart: unless-stopped
     environment:
-      # 时区上海
       TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+      NACOS_SERVER_ADDR: 127.0.0.1:8848
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: ${DOCKER_COMPOSE_NACOS_PASSWORD}
+    mem_limit: 768m
     ports:
-      - "9204:9204"
+      - "9203:9203"
     volumes:
-      # 配置文件
-      - /docker/ruoyi-resource/logs/:/ruoyi/resource/logs
-      # skywalking 探针
-      - /docker/skywalking/agent/:/ruoyi/skywalking/agent
+      - ym-dbo-logs:/ym/dbo/logs
+      - ym-skywalking-agent:/ym/skywalking/agent
     privileged: true
     network_mode: "host"
 
+  ym-agriculture:
+    <<: *ym-runtime
+    image: ym/ym-agriculture:6.0.0
+    container_name: ym-agriculture
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx384m -Xss512k -XX:MaxMetaspaceSize=256m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+      SNAIL_JOB_ENABLED: ${SNAIL_JOB_ENABLED:-true}
+      SNAIL_JOB_SERVER_HOST: ${SNAIL_JOB_SERVER_HOST:-host.docker.internal}
+      SNAIL_JOB_SERVER_PORT: ${SNAIL_JOB_SERVER_PORT:-17888}
+      SNAIL_JOB_TOKEN: ${SNAIL_JOB_TOKEN:?Set the existing local scheduler token in private .env}
+    mem_limit: 1g
+    memswap_limit: 1280m
+    ports:
+      - "9221:9221"
+      - "17891:17891"
+    volumes:
+      - ym-agriculture-logs:/ym/agriculture/logs
+      - ym-skywalking-agent:/ym/skywalking/agent
+    privileged: true
+    network_mode: "host"
+
+  ym-iot:
+    <<: *ym-runtime
+    image: ym/ym-iot:6.0.0
+    container_name: ym-iot
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+      SNAIL_JOB_ENABLED: ${SNAIL_JOB_ENABLED:-true}
+      SNAIL_JOB_SERVER_HOST: ${SNAIL_JOB_SERVER_HOST:-host.docker.internal}
+      SNAIL_JOB_SERVER_PORT: ${SNAIL_JOB_SERVER_PORT:-17888}
+      SNAIL_JOB_TOKEN: ${SNAIL_JOB_TOKEN:?Set the existing local scheduler token in private .env}
+    mem_limit: 768m
+    ports:
+      - "9222:9222"
+      - "17892:17892"
+    volumes:
+      - ym-iot-logs:/ym/iot/logs
+      - ym-skywalking-agent:/ym/skywalking/agent
+    privileged: true
+    network_mode: "host"
+
+  ym-agriculture-miniapp:
+    <<: *ym-runtime
+    image: ym/ym-agriculture-miniapp:6.0.0
+    container_name: ym-agriculture-miniapp
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+    mem_limit: 768m
+    ports:
+      - "9223:9223"
+    volumes:
+      - ym-agriculture-miniapp-logs:/ym/agriculture-miniapp/logs
+      - ym-skywalking-agent:/ym/skywalking/agent
+    privileged: true
+    network_mode: "host"
+
+  ym-farm-task-miniapp:
+    <<: *ym-runtime
+    image: ym/ym-farm-task-miniapp:6.0.0
+    container_name: ym-farm-task-miniapp
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      JAVA_OPTS: -Xms128m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=192m -XX:CompressedClassSpaceSize=32m -XX:ReservedCodeCacheSize=64m -XX:MaxDirectMemorySize=64m -XX:ActiveProcessorCount=2 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Dserver.shutdown=graceful -Dspring.lifecycle.timeout-per-shutdown-phase=30s
+    mem_limit: 768m
+    ports:
+      - "9224:9224"
+    volumes:
+      - ym-farm-task-miniapp-logs:/ym/farm-task-miniapp/logs
+      - ym-skywalking-agent:/ym/skywalking/agent
+    privileged: true
+    network_mode: "host"
 
 #################################################################################################
 #################################### 以下为扩展根据需求搭建 #########################################
@@ -397,7 +559,7 @@ services:
       # 服务地址 用于指定外网ip或域名
       GF_SERVER_ROOT_URL: ""
       # admin 管理员密码
-      GF_SECURITY_ADMIN_PASSWORD: 123456
+      GF_SECURITY_ADMIN_PASSWORD: ${DOCKER_COMPOSE_GF_SECURITY_ADMIN_PASSWORD}
     ports:
       - "3000:3000"
     volumes:
@@ -417,3 +579,15 @@ services:
     environment:
       - JVM_OPTS="-Djava.awt.headless=true"
     network_mode: "host"
+
+volumes:
+  snail-job-logs:
+  ym-gateway-logs:
+  ym-auth-logs:
+  ym-system-logs:
+  ym-dbo-logs:
+  ym-agriculture-logs:
+  ym-iot-logs:
+  ym-agriculture-miniapp-logs:
+  ym-farm-task-miniapp-logs:
+  ym-skywalking-agent:

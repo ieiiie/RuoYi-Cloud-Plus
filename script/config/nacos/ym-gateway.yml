@@ -1,0 +1,98 @@
+# 安全配置
+security:
+  # 不校验白名单
+  ignore:
+    whites:
+      - /auth/code
+      - /system/app/public/*
+      - /auth/logout
+      - /auth/login
+      - /auth/binding/*
+      - /auth/register
+      - /auth/mp-weixin/**
+      - /auth/employee-wx/login
+      # Dbo 使用独立 Redis 与登录态，由 ym-dbo 自身鉴权。
+      - /dbo/**
+      - /resource/sms/code
+      - /resource/email/code
+      - /resource/message/close
+      - /smart-farming/trace/public/**
+      - /*/v3/api-docs
+      - /*/error
+      - /csrf
+
+spring:
+  cloud:
+    gateway:
+      # 打印请求日志(自定义)
+      requestLog: true
+      # Gateway MVC 转发使用的 HttpClient5 连接池配置
+      httpclient:
+        # 总最大连接数
+        max-conn-total: 1000
+        # 单个下游路由最大连接数，SSE 长连接较多时需按并发量调整
+        max-conn-per-route: 500
+        # 连接池满时等待可用连接的时间
+        connection-request-timeout: 3s
+        # SSE 场景通常不设置响应超时，避免长连接被网关主动断开
+        # response-timeout: 60s
+        # 连接最大存活时间，不配置则使用 HttpClient5 默认值
+        # connection-time-to-live: 10m
+        # 空闲连接可用性校验间隔
+        validate-after-inactivity: 30s
+      server:
+        webmvc:
+          discovery:
+            locator:
+              lowerCaseServiceId: true
+              enabled: true
+          routes:
+            # 认证中心
+            - id: ym-auth
+              order: -200
+              uri: lb://ym-auth
+              predicates:
+                - Path=/auth/**
+              filters:
+                - StripPrefix=1
+            # 历史人员与邀请码路径已归属农业服务，优先级必须高于通用 system 路由。
+            - id: ym-agriculture-employee-compat
+              order: -190
+              uri: lb://ym-agriculture
+              predicates:
+                - Path=/system/employee/**,/system/invite-code/**,/miniapp/employee/**
+            # 系统模块
+            - id: ym-system
+              order: 0
+              uri: lb://ym-system
+              predicates:
+                - Path=/system/**,/monitor/**,/resource/**
+              filters:
+                - StripPrefix=1
+            # 农业业务服务，保留原有公开路径，不移除前缀。
+            - id: ym-agriculture
+              uri: lb://ym-agriculture
+              predicates:
+                - Path=/smart-farming/**
+            # 物联网业务服务，保留原有公开路径，不移除前缀。
+            - id: ym-iot
+              uri: lb://ym-iot
+              predicates:
+                - Path=/iot/**,/fertilizer/**,/motorvalve/**
+            # 农业小程序接口聚合服务。
+            - id: ym-agriculture-miniapp
+              uri: lb://ym-agriculture-miniapp
+              predicates:
+                - Path=/mobile/smart-farming/**
+            # 农事任务小程序接口聚合服务。
+            - id: ym-farm-task-miniapp
+              uri: lb://ym-farm-task-miniapp
+              predicates:
+                - Path=/miniapp/smart-farming/stask/**
+            # Dbo 内部运营平台，使用独立账号和独立登录态
+            - id: ym-dbo
+              uri: lb://ym-dbo
+              predicates:
+                - Path=/dbo/**
+              filters:
+                - StripPrefix=1

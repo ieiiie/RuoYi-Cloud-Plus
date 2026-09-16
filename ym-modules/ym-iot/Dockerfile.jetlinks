@@ -1,0 +1,10 @@
+# Supply a Java 21 runtime by immutable digest; build-jetlinks-image.sh enforces it.
+ARG JAVA_RUNTIME_IMAGE
+FROM ${JAVA_RUNTIME_IMAGE}
+ARG JAR_SHA256
+WORKDIR /ym/iot
+COPY target/ym-iot.jar app.jar
+RUN echo "${JAR_SHA256}  app.jar" | sha256sum -c - && mkdir -p logs temp
+ENV SERVER_PORT=9222 LANG=C.UTF-8 LC_ALL=C.UTF-8 JAVA_OPTS=""
+EXPOSE 9222
+ENTRYPOINT ["sh","-c","exec java -Djava.security.egd=file:/dev/./urandom -Dserver.port=${SERVER_PORT} -XX:+HeapDumpOnOutOfMemoryError ${JAVA_OPTS:-} -jar app.jar \"$@\"","ym-iot"]

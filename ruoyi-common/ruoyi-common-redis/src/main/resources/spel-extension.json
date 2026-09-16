@@ -1,7 +1,0 @@
-{
-  "org.dromara.common.redis.annotation.RateLimiter@key": {
-    "method": {
-      "parameters": true
-    }
-  }
-}

@@ -1,0 +1,35 @@
+server:
+  port: 9203
+
+spring:
+  application:
+    name: ym-dbo
+  profiles:
+    active: @profiles.active@
+
+--- # Nacos 配置
+spring:
+  cloud:
+    nacos:
+      server-addr: ${NACOS_SERVER_ADDR:@nacos.server@}
+      username: ${NACOS_USERNAME:@nacos.username@}
+      password: ${NACOS_PASSWORD}
+      discovery:
+        group: DEFAULT_GROUP
+        namespace: public
+      config:
+        group: DEFAULT_GROUP
+        namespace: public
+  config:
+    import:
+      - optional:nacos:application-common.yml
+      - optional:nacos:${spring.application.name}.yml
+
+# Dbo owns its users, departments, files and audit logs. Do not load Cloud remote adapters.
+ym:
+  common:
+    translation:
+      remote-system-enabled: false
+      remote-resource-enabled: false
+    log:
+      remote-enabled: false

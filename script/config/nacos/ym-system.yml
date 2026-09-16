@@ -1,0 +1,75 @@
+spring:
+  datasource:
+    dynamic:
+      # 设置默认的数据源或者数据源组,默认值即为 master
+      primary: master
+      datasource:
+        # 主库数据源
+        master:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${datasource.system-master.url}
+          username: ${datasource.system-master.username}
+          password: ${datasource.system-master.password}
+#        oracle:
+#          type: ${spring.datasource.type}
+#          driverClassName: oracle.jdbc.OracleDriver
+#          url: ${datasource.system-oracle.url}
+#          username: ${datasource.system-oracle.username}
+#          password: ${datasource.system-oracle.password}
+#        postgres:
+#          type: ${spring.datasource.type}
+#          driverClassName: org.postgresql.Driver
+#          url: ${datasource.system-postgres.url}
+#          username: ${datasource.system-postgres.username}
+#          password: ${datasource.system-postgres.password}
+
+# 统一消息推送配置
+message:
+  enabled: true
+  # sse / websocket
+  transport: sse
+  # 网关会移除 /resource 前缀，System 内部仍使用 /message
+  path: /message
+  allowedOrigins: '*'
+  sse-timeout: 86400000
+  heartbeat-interval: 60
+  web-socket-send-time-limit: 10000
+  web-socket-buffer-size-limit: 64000
+
+mail:
+  enabled: false
+  host: smtp.163.com
+  port: 465
+  auth: true
+  from: xxx@163.com
+  user: xxx@163.com
+  pass: xxxxxxxxxx
+  starttlsEnable: true
+  sslEnable: true
+  timeout: 0
+  connectionTimeout: 0
+
+sms:
+  config-type: yaml
+  restricted: true
+  minute-max: 1
+  account-max: 30
+  blends:
+    config1:
+      supplier: alibaba
+      access-key-id: 您的accessKey
+      access-key-secret: ${YM_SYSTEM_ACCESS_KEY_SECRET}
+      signature: 您的短信签名
+      sdk-app-id: 您的sdkAppId
+    config2:
+      supplier: tencent
+      access-key-id: 您的accessKey
+      access-key-secret: ${YM_SYSTEM_ACCESS_KEY_SECRET}
+      signature: 您的短信签名
+      sdk-app-id: 您的sdkAppId
+
+# Dbo 运营端通过 Dubbo 应用级服务发现调用系统与资源控制契约。
+dubbo:
+  application:
+    register-mode: instance

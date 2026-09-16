@@ -1,0 +1,2 @@
+com.ym.common.encrypt.config.EncryptorAutoConfiguration
+com.ym.common.encrypt.config.ApiDecryptAutoConfiguration

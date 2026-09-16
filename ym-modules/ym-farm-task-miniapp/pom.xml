@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.ym</groupId>
+        <artifactId>ym-modules</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>ym-farm-task-miniapp</artifactId>
+    <description>农事任务小程序接口聚合服务</description>
+    <dependencies>
+        <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-nacos</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-log</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-service-impl</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-doc</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-web</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-dubbo</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-redis</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-tenant</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-common-security</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-api-system</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-api-resource</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-api-agriculture</artifactId></dependency>
+        <dependency><groupId>com.ym</groupId><artifactId>ym-api-iot</artifactId></dependency>
+    </dependencies>
+    <build>
+        <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <executions><execution><goals><goal>repackage</goal></goals></execution></executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

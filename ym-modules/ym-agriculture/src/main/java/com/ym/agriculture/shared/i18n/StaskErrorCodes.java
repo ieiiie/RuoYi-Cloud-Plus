@@ -1,0 +1,38 @@
+package com.ym.agriculture.shared.i18n;
+
+/**
+ * stask 小程序稳定错误码。
+ */
+public final class StaskErrorCodes {
+
+    public static final String TASK_STATUS_CHANGED = "STASK_TASK_STATUS_CHANGED";
+    public static final String TECHNICIAN_NOT_HANDLER = "STASK_TECHNICIAN_NOT_HANDLER";
+    public static final String ACTION_FORBIDDEN = "STASK_ACTION_FORBIDDEN";
+    public static final String NOT_PENDING_ACCEPTANCE = "STASK_NOT_PENDING_ACCEPTANCE";
+    public static final String CROSS_TENANT_FORBIDDEN = "STASK_CROSS_TENANT_FORBIDDEN";
+    public static final String LABOR_RECORD_VERSION_CONFLICT = "STASK_LABOR_RECORD_VERSION_CONFLICT";
+    public static final String LABOR_RECORD_FORBIDDEN = "STASK_LABOR_RECORD_FORBIDDEN";
+    public static final String BATCH_TASK_INVALID = "STASK_BATCH_TASK_INVALID";
+    public static final String BATCH_TASK_STATUS_CHANGED = "STASK_BATCH_TASK_STATUS_CHANGED";
+    public static final String IDEMPOTENCY_CONFLICT = "STASK_IDEMPOTENCY_CONFLICT";
+    public static final String IDEMPOTENCY_PROCESSING = "STASK_IDEMPOTENCY_PROCESSING";
+    public static final String CLOCK_LOCATION_REQUIRED = "STASK_CLOCK_LOCATION_REQUIRED";
+    public static final String CLOCK_OUT_OF_FENCE = "STASK_CLOCK_OUT_OF_FENCE";
+    public static final String CLOCK_PHOTO_INVALID = "STASK_CLOCK_PHOTO_INVALID";
+
+    public static final String INSPECTION_PARAM_INVALID = "STASK_INSPECTION_PARAM_INVALID";
+    public static final String INSPECTION_ACTION_FORBIDDEN = "STASK_INSPECTION_ACTION_FORBIDDEN";
+    public static final String INSPECTION_NOT_RESPONSIBLE_TECHNICIAN =
+        "STASK_INSPECTION_NOT_RESPONSIBLE_TECHNICIAN";
+    public static final String INSPECTION_NOT_FOUND = "STASK_INSPECTION_NOT_FOUND";
+    public static final String INSPECTION_DELETED = "STASK_INSPECTION_DELETED";
+    public static final String INSPECTION_STATUS_CHANGED = "STASK_INSPECTION_STATUS_CHANGED";
+    public static final String INSPECTION_HAS_HANDLE_HISTORY = "STASK_INSPECTION_HAS_HANDLE_HISTORY";
+    public static final String INSPECTION_ORDER_INVALID = "STASK_INSPECTION_ORDER_INVALID";
+    public static final String INSPECTION_OWNER_MISMATCH = "STASK_INSPECTION_OWNER_MISMATCH";
+    public static final String INSPECTION_GREENHOUSE_CHANGED = "STASK_INSPECTION_GREENHOUSE_CHANGED";
+    public static final String INSPECTION_PHOTO_LIMIT_EXCEEDED = "STASK_INSPECTION_PHOTO_LIMIT_EXCEEDED";
+
+    private StaskErrorCodes() {
+    }
+}

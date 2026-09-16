@@ -1,0 +1,1 @@
+customDubboLoadBalancer=com.ym.common.loadbalance.core.CustomDubboLoadBalancer

@@ -1,0 +1,27 @@
+package com.ym.agriculture.farming.field.layout.model.entity;
+
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import com.ym.common.tenant.core.TenantEntity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.io.Serial;
+
+/**
+ * 大棚布局列。
+ */
+@Data
+@EqualsAndHashCode(callSuper = true)
+@TableName("sf_greenhouse_layout_column")
+public class SfGreenhouseLayoutColumn extends TenantEntity {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    @TableId("column_id")
+    private Long columnId;
+    private Long layoutId;
+    private String columnName;
+    private Integer columnOrder;
+}

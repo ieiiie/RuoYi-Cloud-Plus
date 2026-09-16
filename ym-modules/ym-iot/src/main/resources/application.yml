@@ -1,0 +1,43 @@
+server:
+  port: 9222
+
+spring:
+  application:
+    name: ym-iot
+  profiles:
+    active: @profiles.active@
+  cloud:
+    nacos:
+      server-addr: @nacos.server@
+      username: @nacos.username@
+      password: ${APPLICATION_PASSWORD}
+      discovery:
+        group: DEFAULT_GROUP
+        namespace: public
+      config:
+        group: DEFAULT_GROUP
+        namespace: public
+  config:
+    import:
+      - optional:nacos:application-common.yml
+      - optional:nacos:datasource.yml
+      - optional:nacos:${spring.application.name}.yml
+
+# 使用框架默认数据源和事务管理器，仅保留本模块需要的结果映射与查询缓存选项。
+mybatis-plus:
+  configuration:
+    call-setters-on-nulls: true
+    arg-name-based-constructor-auto-mapping: true
+    # 每次归属及锁查询实际访问数据库，避免事务内命中旧的一级缓存。
+    local-cache-scope: STATEMENT
+
+# JetLinks 是唯一设备核心；由部署配置明确开启，避免测试环境连接真实设备。
+ym:
+  iot:
+    jetlinks:
+      enabled: false
+
+# 本服务不再直连 MQTT。公共依赖中的客户端保持关闭。
+mqtt:
+  client:
+    enabled: false

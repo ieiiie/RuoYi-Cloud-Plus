@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          type: com.zaxxer.hikari.HikariDataSource
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://host.docker.internal:3306/ym-iot?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+          username: root
+          password: ${YM_IOT_PASSWORD}
+
+dubbo:
+  application:
+    register-mode: instance
+
+# 本服务只保留租户业务，设备采集、协议接入和设备侧定时任务由 JetLinks 维护。
+# 明确关闭旧任务客户端；Docker 中同名开关也必须保持关闭。
+snail-job:
+  enabled: false
+
+# 保留关闭开关，避免公共依赖中的 MQTT 客户端自行连接。
+mqtt:
+  client:
+    enabled: false
+
+ym:
+  iot:
+    jetlinks:
+      enabled: true
+      consumer-id: ym-iot-business-v1
+    motorvalve:
+      # 业务历史仍需识别未配置的阀门通道，不属于设备协议接入参数。
+      unconfigured-channel-sentinel: 888.0

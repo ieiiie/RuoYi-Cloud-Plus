@@ -1,5 +1,5 @@
 -- -----------------------------------------------------------------------------
--- RuoYi-Cloud-Plus MySQL 完整初始化脚本。
+-- YM-Cloud-Plus MySQL 完整初始化脚本。
 -- 已合并 6.0.0 多租户、6.0.1 全局账号、6.0.2 全局字典、6.0.3 菜单清理与
 -- 6.0.4 Nacos 控制台菜单清理；新库仅执行本文件，
 -- 无需再执行 update_6.0.0-tenant.sql、update_6.0.1-global-user.sql 或
@@ -317,6 +317,7 @@ insert into sys_menu values(1761400000000000108, '日志管理', 176140000000000
 insert into sys_menu values(1761400000000000109, '在线用户', 1761400000000000002, 1, 'online', 'monitor/online/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:online:list', 'online', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '在线用户菜单');
 insert into sys_menu values(1761400000000000113, '缓存监控', 1761400000000000002, 5, 'cache', 'monitor/cache/index', '', 'N', 'Y', 'C', '0', '0', 'monitor:cache:list', 'redis', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '缓存监控菜单');
 insert into sys_menu values(1761400000000000123, '客户端管理', 1761400000000000001, 11, 'client', 'system/client/index', '', 'N', 'Y', 'C', '0', '0', 'system:client:list', 'international', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '客户端管理菜单');
+insert into sys_menu values(1761400000000011800, '租户字典', 1761400000000000001, 12, 'tenant-dict', 'system/tenant-dict/index', '', 'N', 'Y', 'C', '0', '0', 'system:tenantDict:list', 'ant-design:unordered-list-outlined', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '维护当前租户字典值');
 insert into sys_menu values(1761400000000000130, '分配用户', 1761400000000000001, 2, 'role-auth/user/:roleId', 'system/role/authUser', '', 'N', 'N', 'C', '1', '0', 'system:role:edit', '#', '/system/role', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000000131, '分配角色', 1761400000000000001, 1, 'user-auth/role/:userId', 'system/user/authRole', '', 'N', 'N', 'C', '1', '0', 'system:user:edit', '#', '/system/user', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000000133, '文件配置管理', 1761400000000000001, 10, 'oss-config/index', 'system/oss/config', '', 'N', 'N', 'C', '1', '0', 'system:ossConfig:list', '#', '/system/oss', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
@@ -404,6 +405,11 @@ insert into sys_menu values(1761400000000001062, '客户端管理新增', 176140
 insert into sys_menu values(1761400000000001063, '客户端管理修改', 1761400000000000123, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001064, '客户端管理删除', 1761400000000000123, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 insert into sys_menu values(1761400000000001065, '客户端管理导出', 1761400000000000123, 5, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:client:export', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
+-- 租户字典按钮
+insert into sys_menu values(1761400000000011801, '租户字典查询', 1761400000000011800, 1, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantDict:query', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
+insert into sys_menu values(1761400000000011802, '租户字典新增', 1761400000000011800, 2, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantDict:add', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
+insert into sys_menu values(1761400000000011803, '租户字典修改', 1761400000000011800, 3, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantDict:edit', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
+insert into sys_menu values(1761400000000011804, '租户字典删除', 1761400000000011800, 4, '#', '', '', 'N', 'Y', 'F', '0', '0', 'system:tenantDict:remove', '#', '', '', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '');
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色
 -- ----------------------------
@@ -743,6 +749,7 @@ create table sys_config (
 insert into sys_config values(1761700000000000001, '用户管理-账号初始密码', 'sys.user.initPassword', '123456', 'Y', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '初始化密码 123456');
 insert into sys_config values(1761700000000000002, '账号自助-是否开启用户注册功能', 'sys.account.registerUser', 'false', 'Y', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '是否开启注册用户功能（true开启，false关闭）');
 insert into sys_config values(1761700000000000003, 'OSS预览列表资源开关', 'sys.oss.previewListResource', 'true', 'Y', 1761000000000000103, 1761100000000000001, sysdate(), null, null, 'true:开启, false:关闭');
+insert into sys_config values(1761700000000000004, '用户并发登录数量', 'sys.account.maxConcurrentLoginCount', '-1', 'Y', 1761000000000000103, 1761100000000000001, sysdate(), null, null, '-1表示不限，正整数表示同一用户每类客户端允许同时在线的会话数');
 
 
 -- ----------------------------
@@ -850,7 +857,6 @@ create table sys_oss_config (
   is_https        char(1)                 default 'N'     comment '是否https（Y=是,N=否）',
   region          varchar(255)            default ''      comment '域',
   access_policy   char(1)       not null  default '1'     comment '桶权限类型(0=private 1=public 2=custom)',
-  status          char(1)                 default 'N'     comment '是否默认（Y=是,N=否）',
   ext1            varchar(255)            default ''      comment '扩展字段',
   create_dept     bigint(20)              default null    comment '创建部门',
   create_by       bigint(20)              default null    comment '创建者',
@@ -861,11 +867,11 @@ create table sys_oss_config (
   primary key (oss_config_id)
 ) engine=innodb comment='对象存储配置表';
 
-insert into sys_oss_config values (1761900000000000001, 'minio', 'ruoyi', 'ruoyi123', 'ruoyi', '', '127.0.0.1:9000', '', 'N', '', '1', 'Y', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
-insert into sys_oss_config values (1761900000000000002, 'qiniu', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi', '', 's3-cn-north-1.qiniucs.com', '', 'N', '', '1', 'N', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
-insert into sys_oss_config values (1761900000000000003, 'aliyun', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi', '', 'oss-cn-beijing.aliyuncs.com', '', 'N', '', '1', 'N', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
-insert into sys_oss_config values (1761900000000000004, 'qcloud', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi-1240000000', '', 'cos.ap-beijing.myqcloud.com', '', 'N', 'ap-beijing', '1', 'N', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
-insert into sys_oss_config values (1761900000000000005, 'image', 'ruoyi', 'ruoyi123', 'ruoyi', 'image', '127.0.0.1:9000', '', 'N', '', '1', 'N', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
+insert into sys_oss_config values (1761900000000000001, 'minio', 'ruoyi', 'ruoyi123', 'ruoyi', '', '127.0.0.1:9000', '', 'N', '', '1', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
+insert into sys_oss_config values (1761900000000000002, 'qiniu', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi', '', 's3-cn-north-1.qiniucs.com', '', 'N', '', '1', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
+insert into sys_oss_config values (1761900000000000003, 'aliyun', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi', '', 'oss-cn-beijing.aliyuncs.com', '', 'N', '', '1', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
+insert into sys_oss_config values (1761900000000000004, 'qcloud', 'XXXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXX', 'ruoyi-1240000000', '', 'cos.ap-beijing.myqcloud.com', '', 'N', 'ap-beijing', '1', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
+insert into sys_oss_config values (1761900000000000005, 'image', 'ruoyi', 'ruoyi123', 'ruoyi', 'image', '127.0.0.1:9000', '', 'N', '', '1', '', 1761000000000000103, 1761100000000000001, sysdate(), 1761100000000000001, sysdate(), null);
 
 -- ----------------------------
 -- 系统授权表
@@ -959,6 +965,7 @@ CREATE TABLE sys_tenant (
     domain            varchar(255)    DEFAULT NULL COMMENT '域名',
     intro             varchar(1000)   DEFAULT NULL COMMENT '企业简介',
     package_id        bigint(20)      DEFAULT NULL COMMENT '租户套餐编号',
+    oss_config_id     bigint(20)      NOT NULL COMMENT 'OSS配置ID',
     expire_time       datetime        DEFAULT NULL COMMENT '过期时间',
     account_count     bigint(20)      NOT NULL DEFAULT -1 COMMENT '用户数量上限，-1表示不限制',
     status            char(1)         NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
@@ -971,7 +978,8 @@ CREATE TABLE sys_tenant (
     remark            varchar(500)    DEFAULT NULL COMMENT '备注',
     PRIMARY KEY (id),
     UNIQUE KEY uk_sys_tenant_tenant_id (tenant_id),
-    KEY idx_sys_tenant_status (status)
+    KEY idx_sys_tenant_status (status),
+    KEY idx_sys_tenant_oss_config_id (oss_config_id)
 ) ENGINE=InnoDB COMMENT='租户表';
 
 CREATE TABLE sys_tenant_package (
@@ -1003,11 +1011,11 @@ SELECT 1762000000000000001,
 FROM sys_menu;
 
 INSERT INTO sys_tenant
-    (id, tenant_id, contact_user_name, contact_phone, company_name, package_id,
+    (id, tenant_id, contact_user_name, contact_phone, company_name, package_id, oss_config_id,
      account_count, status, del_flag, create_dept, create_by, create_time, remark)
 VALUES
     (1762000000000000002, '000000', '平台管理员', '15888888888', '默认管理租户',
-     1762000000000000001, -1, '0', '0', 1761000000000000103,
+     1762000000000000001, 1761900000000000001, -1, '0', '0', 1761000000000000103,
      1761100000000000001, SYSDATE(), '系统初始化的默认租户');
 
 -- 平台租户管理菜单与按钮权限。
@@ -1044,6 +1052,242 @@ INSERT INTO sys_role_menu (role_id, menu_id) VALUES
     (1761300000000000001, 1761400000000001714),
     (1761300000000000001, 1761400000000001715);
 
+
+-- -----------------------------------------------------------------------------
+-- SaaS 运营模型（完整初始化最终结构）。
+-- -----------------------------------------------------------------------------
+CREATE TABLE sys_app (
+    app_id bigint(20) NOT NULL COMMENT '应用ID',
+    app_key varchar(64) NOT NULL COMMENT '应用标识',
+    app_name varchar(100) NOT NULL COMMENT '应用名称',
+    app_type varchar(16) NOT NULL DEFAULT 'MICRO' COMMENT 'CORE/MICRO/COMPOSITE',
+    entry varchar(255) DEFAULT NULL COMMENT '微应用入口',
+    initial_path varchar(255) NOT NULL DEFAULT '/' COMMENT '初始路由',
+    alive tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否保活',
+    sync tinyint(1) NOT NULL DEFAULT 1 COMMENT '是否同步路由',
+    icon varchar(1024) DEFAULT NULL COMMENT '图标',
+    order_num int(4) NOT NULL DEFAULT 0 COMMENT '排序',
+    status char(1) NOT NULL DEFAULT '0' COMMENT '状态',
+    del_flag char(1) NOT NULL DEFAULT '0' COMMENT '删除标志',
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY (app_id),
+    UNIQUE KEY uk_sys_app_key (app_key),
+    KEY idx_sys_app_status_sort (status,order_num)
+) ENGINE=InnoDB COMMENT='SaaS全局应用表';
+
+CREATE TABLE sys_composite_app_menu (
+    app_id bigint(20) NOT NULL COMMENT '组合应用ID',
+    menu_id bigint(20) NOT NULL COMMENT '源微应用菜单ID',
+    PRIMARY KEY(app_id,menu_id),
+    KEY idx_composite_app_menu_menu_id(menu_id)
+) ENGINE=InnoDB COMMENT='组合应用菜单关联表';
+
+INSERT INTO sys_app(app_id,app_key,app_name,app_type,entry,initial_path,alive,sync,icon,order_num,status,del_flag,create_time,remark)
+VALUES(1762100000000000001,'saas-core','SaaS核心','CORE',NULL,'/',1,1,'ant-design:appstore-outlined',0,'0','0',SYSDATE(),'主应用核心菜单');
+
+ALTER TABLE sys_menu
+    ADD COLUMN app_id bigint(20) NOT NULL DEFAULT 1762100000000000001 COMMENT '所属应用ID' AFTER menu_id,
+    ADD KEY idx_sys_menu_app_parent (app_id,parent_id);
+
+CREATE TABLE sys_tenant_package_app (
+    package_id bigint(20) NOT NULL,
+    app_id bigint(20) NOT NULL,
+    PRIMARY KEY(package_id,app_id),
+    KEY idx_package_app_app_id(app_id)
+) ENGINE=InnoDB COMMENT='租户套餐应用关联表';
+
+CREATE TABLE sys_tenant_package_menu (
+    package_id bigint(20) NOT NULL,
+    menu_id bigint(20) NOT NULL,
+    PRIMARY KEY(package_id,menu_id),
+    KEY idx_package_menu_menu_id(menu_id)
+) ENGINE=InnoDB COMMENT='租户套餐菜单关联表';
+
+INSERT INTO sys_tenant_package_app(package_id,app_id)
+SELECT package_id,1762100000000000001 FROM sys_tenant_package;
+INSERT INTO sys_tenant_package_menu(package_id,menu_id)
+SELECT p.package_id,m.menu_id FROM sys_tenant_package p JOIN sys_menu m
+  ON FIND_IN_SET(
+      CAST(m.menu_id AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci,
+      p.menu_ids COLLATE utf8mb4_unicode_ci
+  )>0;
+ALTER TABLE sys_tenant_package DROP COLUMN menu_ids;
+
+CREATE TABLE sys_role_template (
+    template_id bigint(20) NOT NULL,
+    template_name varchar(100) NOT NULL,
+    template_key varchar(100) NOT NULL,
+    app_id bigint(20) DEFAULT NULL,
+    role_key varchar(100) NOT NULL,
+    role_sort int(4) NOT NULL DEFAULT 1,
+    data_scope char(1) NOT NULL DEFAULT '1',
+    status char(1) NOT NULL DEFAULT '0',
+    template_version int(11) NOT NULL DEFAULT 1,
+    tenant_deletable tinyint(1) NOT NULL DEFAULT 0 COMMENT '租户是否可删除下发角色',
+    del_flag char(1) NOT NULL DEFAULT '0',
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY(template_id),
+    UNIQUE KEY uk_sys_role_template_key(template_key),
+    KEY idx_role_template_app(app_id,status)
+) ENGINE=InnoDB COMMENT='SaaS角色权限模板';
+
+CREATE TABLE sys_role_template_menu (
+    template_id bigint(20) NOT NULL,
+    menu_id bigint(20) NOT NULL,
+    PRIMARY KEY(template_id,menu_id),
+    KEY idx_role_template_menu_menu(menu_id)
+) ENGINE=InnoDB COMMENT='角色模板菜单关联表';
+
+ALTER TABLE sys_role
+    ADD COLUMN template_id bigint(20) DEFAULT NULL COMMENT '角色模板ID' AFTER tenant_id,
+    ADD COLUMN template_version int(11) DEFAULT NULL COMMENT '模板版本' AFTER template_id,
+    ADD COLUMN is_builtin tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否内置角色' AFTER template_version,
+    ADD COLUMN tenant_deletable tinyint(1) NOT NULL DEFAULT 0 COMMENT '模板角色是否允许租户删除' AFTER is_builtin,
+    ADD UNIQUE KEY uk_sys_role_tenant_template(tenant_id,template_id),
+    DROP INDEX idx_sys_role_tenant_role_key,
+    ADD UNIQUE KEY uk_sys_role_tenant_role_key(tenant_id,role_key);
+
+INSERT INTO sys_role_template(template_id,template_name,template_key,app_id,role_key,role_sort,data_scope,status,template_version,tenant_deletable,del_flag,create_time,remark)
+VALUES(1762200000000000001,'租户管理员','tenant-admin',NULL,'tenant_admin',1,'1','0',1,0,'0',SYSDATE(),'全局内置租户管理员模板');
+
+CREATE TABLE sys_config_definition (
+    definition_id bigint(20) NOT NULL,
+    app_id bigint(20) DEFAULT NULL,
+    config_name varchar(100) NOT NULL,
+    config_key varchar(100) NOT NULL,
+    value_type varchar(16) NOT NULL DEFAULT 'STRING',
+    default_value varchar(2000) DEFAULT NULL,
+    required_flag tinyint(1) NOT NULL DEFAULT 0,
+    min_length int(11) DEFAULT NULL,
+    max_length int(11) DEFAULT NULL,
+    min_value decimal(30,10) DEFAULT NULL,
+    max_value decimal(30,10) DEFAULT NULL,
+    regex_pattern varchar(500) DEFAULT NULL,
+    enum_options json DEFAULT NULL,
+    tenant_editable tinyint(1) NOT NULL DEFAULT 1,
+    order_num int(4) NOT NULL DEFAULT 0,
+    status char(1) NOT NULL DEFAULT '0',
+    issued_flag tinyint(1) NOT NULL DEFAULT 0,
+    del_flag char(1) NOT NULL DEFAULT '0',
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY(definition_id),
+    UNIQUE KEY uk_config_definition_key(config_key),
+    KEY idx_config_definition_app(app_id,status)
+) ENGINE=InnoDB COMMENT='SaaS租户参数定义';
+
+ALTER TABLE sys_config
+    ADD COLUMN definition_id bigint(20) DEFAULT NULL COMMENT '参数定义ID' AFTER tenant_id,
+    ADD UNIQUE KEY uk_sys_config_tenant_definition(tenant_id,definition_id);
+
+INSERT INTO sys_config_definition(definition_id,config_name,config_key,value_type,default_value,required_flag,tenant_editable,order_num,status,issued_flag,del_flag,create_time,remark)
+SELECT MIN(config_id),MAX(config_name),config_key,
+       CASE WHEN LOWER(MAX(config_value)) IN('true','false') THEN 'BOOLEAN' ELSE 'STRING' END,
+       MAX(config_value),0,1,0,'0',1,'0',SYSDATE(),MAX(remark)
+FROM sys_config GROUP BY config_key;
+UPDATE sys_config_definition
+SET value_type='INTEGER',default_value='-1',required_flag=1,min_value=-1,max_value=2147483647,
+    regex_pattern='^(-1|[1-9][0-9]*)$',tenant_editable=1,order_num=30,status='0',issued_flag=1,
+    remark='PC、Android、iOS、微信小程序分别计数；-1表示不限，正整数表示每类客户端允许同时在线的会话数'
+WHERE config_key='sys.account.maxConcurrentLoginCount';
+UPDATE sys_config c JOIN sys_config_definition d ON d.config_key=c.config_key
+SET c.definition_id=d.definition_id;
+
+-- SaaS 侧移除运营菜单；租户参数只保留查询和参数值修改。
+DELETE rm FROM sys_role_menu rm JOIN sys_menu m ON m.menu_id=rm.menu_id
+WHERE m.menu_id IN(1761400000000000102,1761400000000000105,1761400000000000133,1761400000000001700,1761400000000001710)
+   OR m.parent_id IN(1761400000000000102,1761400000000000105,1761400000000000133,1761400000000001700,1761400000000001710)
+   OR m.perms LIKE 'system:ossConfig:%';
+DELETE FROM sys_menu
+WHERE menu_id IN(1761400000000000102,1761400000000000105,1761400000000000133,1761400000000001700,1761400000000001710)
+   OR parent_id IN(1761400000000000102,1761400000000000105,1761400000000000133,1761400000000001700,1761400000000001710)
+   OR perms LIKE 'system:ossConfig:%';
+UPDATE sys_menu SET menu_name='租户参数',remark='租户仅可修改参数值' WHERE menu_id=1761400000000000106;
+DELETE FROM sys_role_menu WHERE menu_id IN(1761400000000001032,1761400000000001034,1761400000000001035);
+DELETE FROM sys_menu WHERE menu_id IN(1761400000000001032,1761400000000001034,1761400000000001035);
+UPDATE sys_menu SET menu_name='参数值修改',perms='system:config:valueEdit' WHERE menu_id=1761400000000001033;
+
+-- Dbo 定义租户字典类型，SaaS 租户独立维护字典值。
+CREATE TABLE sys_tenant_dict_type (
+    dict_id bigint(20) NOT NULL,
+    dict_name varchar(100) NOT NULL,
+    dict_type varchar(100) NOT NULL,
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY(dict_id),
+    UNIQUE KEY uk_sys_tenant_dict_type_type(dict_type)
+) ENGINE=InnoDB COMMENT='Dbo定义的租户字典类型';
+
+CREATE TABLE sys_tenant_dict_default_data (
+    dict_code bigint(20) NOT NULL,
+    dict_sort int(4) NOT NULL DEFAULT 0,
+    dict_label varchar(100) NOT NULL,
+    dict_value varchar(100) NOT NULL,
+    dict_type varchar(100) NOT NULL,
+    css_class varchar(100) DEFAULT NULL,
+    list_class varchar(100) DEFAULT NULL,
+    is_default char(1) NOT NULL DEFAULT 'N',
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY(dict_code),
+    UNIQUE KEY uk_sys_tenant_dict_default_value(dict_type,dict_value),
+    UNIQUE KEY uk_sys_tenant_dict_default_label(dict_type,dict_label),
+    KEY idx_sys_tenant_dict_default_list(dict_type,dict_sort,dict_code)
+) ENGINE=InnoDB COMMENT='新租户字典默认值模板';
+
+CREATE TABLE sys_tenant_dict_data (
+    dict_code bigint(20) NOT NULL,
+    tenant_id varchar(20) NOT NULL,
+    dict_sort int(4) NOT NULL DEFAULT 0,
+    dict_label varchar(100) NOT NULL,
+    dict_value varchar(100) NOT NULL,
+    dict_type varchar(100) NOT NULL,
+    css_class varchar(100) DEFAULT NULL,
+    list_class varchar(100) DEFAULT NULL,
+    is_default char(1) NOT NULL DEFAULT 'N',
+    create_dept bigint(20) DEFAULT NULL,
+    create_by bigint(20) DEFAULT NULL,
+    create_time datetime DEFAULT NULL,
+    update_by bigint(20) DEFAULT NULL,
+    update_time datetime DEFAULT NULL,
+    remark varchar(500) DEFAULT NULL,
+    PRIMARY KEY(dict_code),
+    UNIQUE KEY uk_sys_tenant_dict_value(tenant_id,dict_type,dict_value),
+    UNIQUE KEY uk_sys_tenant_dict_label(tenant_id,dict_type,dict_label),
+    KEY idx_sys_tenant_dict_list(tenant_id,dict_type,dict_sort,dict_code)
+) ENGINE=InnoDB COMMENT='租户独立字典值';
+
+INSERT INTO sys_tenant_package_menu(package_id,menu_id)
+SELECT package_id,1761400000000011800 FROM sys_tenant_package;
+INSERT INTO sys_tenant_package_menu(package_id,menu_id)
+SELECT p.package_id,m.menu_id FROM sys_tenant_package p JOIN sys_menu m ON m.parent_id=1761400000000011800;
+INSERT INTO sys_role_menu(role_id,menu_id)
+SELECT rm.role_id,1761400000000011800 FROM sys_role_menu rm WHERE rm.menu_id=1761400000000000001;
+INSERT INTO sys_role_menu(role_id,menu_id)
+SELECT rm.role_id,m.menu_id FROM sys_role_menu rm JOIN sys_menu m ON m.parent_id=1761400000000011800
+WHERE rm.menu_id=1761400000000000001;
 
 -- for AT mode you must to init this sql for you business database. the seata server not need it.
 CREATE TABLE IF NOT EXISTS undo_log

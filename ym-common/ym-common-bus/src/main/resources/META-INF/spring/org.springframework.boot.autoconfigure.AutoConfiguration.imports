@@ -1,0 +1,2 @@
+com.ym.common.bus.config.BusCustomConfiguration
+com.ym.common.bus.config.RedisBusBinderConfiguration

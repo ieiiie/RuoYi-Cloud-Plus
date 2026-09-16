@@ -1,0 +1,132 @@
+package com.ym.system.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import lombok.RequiredArgsConstructor;
+import com.ym.common.core.domain.PageResult;
+import com.ym.common.core.utils.MapstructUtils;
+import com.ym.common.core.utils.ObjectUtils;
+import com.ym.common.core.utils.StringUtils;
+import com.ym.common.mybatis.core.page.PageQuery;
+import com.ym.common.mybatis.core.query.LambdaQueryBuilder;
+import com.ym.common.mybatis.core.query.QueryBuilder;
+import com.ym.system.domain.SysNotice;
+import com.ym.system.domain.bo.SysNoticeBo;
+import com.ym.system.domain.vo.SysNoticeVo;
+import com.ym.system.domain.vo.SysUserVo;
+import com.ym.system.mapper.SysNoticeMapper;
+import com.ym.system.mapper.SysUserMapper;
+import com.ym.system.service.ISysNoticeService;
+import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * 公告 服务层实现
+ *
+ * @author Lion Li
+ */
+@RequiredArgsConstructor
+@Service
+public class SysNoticeServiceImpl implements ISysNoticeService {
+
+    private final SysNoticeMapper noticeMapper;
+    private final SysUserMapper userMapper;
+
+    /**
+     * 分页查询通知公告列表
+     *
+     * @param notice    查询条件
+     * @param pageQuery 分页参数
+     * @return 通知公告分页列表
+     */
+    @Override
+    public PageResult<SysNoticeVo> selectPageNoticeList(SysNoticeBo notice, PageQuery pageQuery) {
+        LambdaQueryWrapper<SysNotice> lqw = buildQueryWrapper(notice);
+        Page<SysNoticeVo> page = noticeMapper.selectVoPage(pageQuery.build(), lqw);
+        return PageResult.build(page.getRecords(), page.getTotal());
+    }
+
+    /**
+     * 查询公告信息
+     *
+     * @param noticeId 公告ID
+     * @return 公告信息
+     */
+    @Override
+    public SysNoticeVo selectNoticeById(Long noticeId) {
+        return noticeMapper.selectVoById(noticeId);
+    }
+
+    /**
+     * 查询公告列表
+     *
+     * @param notice 公告信息
+     * @return 公告集合
+     */
+    @Override
+    public List<SysNoticeVo> selectNoticeList(SysNoticeBo notice) {
+        LambdaQueryWrapper<SysNotice> lqw = buildQueryWrapper(notice);
+        return noticeMapper.selectVoList(lqw);
+    }
+
+    private LambdaQueryWrapper<SysNotice> buildQueryWrapper(SysNoticeBo bo) {
+        LambdaQueryBuilder<SysNotice> builder = QueryBuilder.lambda(SysNotice.class)
+            .likeIfText(SysNotice::getNoticeTitle, bo.getNoticeTitle())
+            .eqIfText(SysNotice::getNoticeType, bo.getNoticeType());
+        if (StringUtils.isNotBlank(bo.getCreateByName())) {
+            SysUserVo sysUser = userMapper.selectUserByUserName(bo.getCreateByName());
+            builder.eq(SysNotice::getCreateBy, ObjectUtils.notNullGetter(sysUser, SysUserVo::getUserId));
+        }
+        return builder.orderByAsc(SysNotice::getNoticeId).build();
+    }
+
+    /**
+     * 新增公告
+     *
+     * @param bo 公告信息
+     * @return 结果
+     */
+    @Override
+    public int insertNotice(SysNoticeBo bo) {
+        SysNotice notice = MapstructUtils.convert(bo, SysNotice.class);
+        int rows = noticeMapper.insert(notice);
+        bo.setNoticeId(notice.getNoticeId());
+        return rows;
+    }
+
+    /**
+     * 修改公告
+     *
+     * @param bo 公告信息
+     * @return 结果
+     */
+    @Override
+    public int updateNotice(SysNoticeBo bo) {
+        SysNotice notice = MapstructUtils.convert(bo, SysNotice.class);
+        return noticeMapper.updateById(notice);
+    }
+
+    /**
+     * 删除公告对象
+     *
+     * @param noticeId 公告ID
+     * @return 结果
+     */
+    @Override
+    public int deleteNoticeById(Long noticeId) {
+        return noticeMapper.deleteById(noticeId);
+    }
+
+    /**
+     * 批量删除公告信息
+     *
+     * @param noticeIds 需要删除的公告ID
+     * @return 结果
+     */
+    @Override
+    public int deleteNoticeByIds(Long[] noticeIds) {
+        return noticeMapper.deleteByIds(Arrays.asList(noticeIds));
+    }
+}

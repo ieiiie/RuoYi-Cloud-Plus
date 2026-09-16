@@ -1,0 +1,5 @@
+*
+!target/
+target/*
+!target/ym-iot.jar
+!Dockerfile.jetlinks

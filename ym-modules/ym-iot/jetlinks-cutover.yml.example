@@ -1,0 +1,33 @@
+# Deployment-wide cutover example; not loaded by default. Apply only in the isolated
+# instance first, then as one operator-controlled production change.
+ym:
+  mqtt:
+    enabled: false
+  iot:
+    jetlinks:
+      enabled: true
+      consumer-id: ym-iot-business-v1
+    fertilizer:
+      enabled: false
+    motorvalve:
+      enabled: false
+    hfzk:
+      enabled: false
+    wvp:
+      enabled: false
+    emqx-presence:
+      enabled: false
+    alert:
+      offline:
+        job-enabled: false
+      threshold:
+        enabled: false
+mqtt:
+  enabled: false
+  client:
+    enabled: false
+mica:
+  mqtt:
+    enabled: false
+# Supply isolated Nacos namespace, Redis, datasource, Dubbo registry and SnailJob
+# settings separately. This file intentionally contains no addresses or credentials.

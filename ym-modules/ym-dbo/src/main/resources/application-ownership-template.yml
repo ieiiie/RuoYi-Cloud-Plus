@@ -1,0 +1,19 @@
+# Configuration template only; not imported automatically. Merge into ym-dbo Nacos config.
+# The existing master (DBO accounts) and saas datasource definitions remain unchanged.
+spring:
+  datasource:
+    dynamic:
+      strict: true
+      datasource:
+        iot:
+          type: com.zaxxer.hikari.HikariDataSource
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${DBO_IOT_JDBC_URL}
+          username: ${DBO_IOT_DB_USERNAME}
+          password: ${DBO_IOT_DB_PASSWORD}
+ym:
+  dbo:
+    ownership:
+      datasource: iot
+# "saas" must already be configured with read permission on sys_tenant.
+# Do not use root or reuse the business runtime database account for this datasource.

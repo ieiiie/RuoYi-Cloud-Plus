@@ -1,0 +1,7 @@
+{
+  "com.ym.common.redis.annotation.RateLimiter@key": {
+    "method": {
+      "parameters": true
+    }
+  }
+}

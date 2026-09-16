@@ -1,0 +1,3 @@
+com.ym.common.push.config.MessageAutoConfiguration
+com.ym.common.push.config.MessageSseConfiguration
+com.ym.common.push.config.MessageWebSocketConfiguration

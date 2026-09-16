@@ -1,0 +1,116 @@
+# Dbo 是无多租户的内部运营平台；master 保存 Dbo 自身数据，saas 仅用于运营 ry-cloud。
+server:
+  jetty:
+    max-http-form-post-size: -1
+    threads:
+      min: 8
+      max: 256
+
+spring:
+  autoconfigure:
+    exclude:
+      - com.ym.common.log.event.LogEventListener
+  cloud:
+    nacos:
+      discovery:
+        metadata:
+          application-type: internal-service
+          platform: dbo
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    dynamic:
+      primary: master
+      strict: true
+      seata: false
+      datasource:
+        master:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${DBO_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/ry_dbo?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true}
+          username: ${DBO_MYSQL_USERNAME:root}
+          password: ${DBO_MYSQL_PASSWORD}
+        saas:
+          type: ${spring.datasource.type}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: ${SAAS_DATASOURCE_URL:jdbc:mysql://host.docker.internal:3306/ry-cloud?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true}
+          username: ${SAAS_MYSQL_USERNAME:root}
+          password: ${SAAS_MYSQL_PASSWORD}
+      hikari:
+        maxPoolSize: 20
+        minIdle: 10
+        connectionTimeout: 30000
+        validationTimeout: 5000
+        idleTimeout: 600000
+        maxLifetime: 1800000
+        keepaliveTime: 30000
+  data:
+    redis:
+      database: ${DBO_REDIS_DATABASE:2}
+
+redisson:
+  keyPrefix: 'dbo:'
+  singleServerConfig:
+    clientName: ym-dbo
+    database: ${spring.data.redis.database}
+
+tenant:
+  enable: false
+
+sa-token:
+  check-same-token: false
+  token-name: Authorization
+  is-concurrent: true
+  is-share: false
+
+security:
+  captcha:
+    enabled: true
+    type: math
+    numberLength: 1
+    charLength: 4
+
+user:
+  password:
+    maxRetryCount: 5
+    lockTime: 10
+
+api-decrypt:
+  enabled: false
+
+mybatis-encryptor:
+  enable: false
+
+# Dbo 依赖 Cloud API DTO，显式限定实体包，避免扫描 com.ym.system.api.domain 产生同名别名。
+mybatis-plus:
+  typeAliasesPackage: com.ym.system.domain,com.ym.system.saas.domain
+
+dubbo:
+  application:
+    register-mode: instance
+  consumer:
+    check: false
+    retries: 0
+
+# Dbo 用户、部门、OSS 与操作日志均查询/写入本地库，仅保留 SaaS 控制通知的 Dubbo 调用。
+ym:
+  common:
+    translation:
+      remote-system-enabled: false
+      remote-resource-enabled: false
+    log:
+      remote-enabled: false
+
+springdoc:
+  info:
+    title: Dbo 运营平台接口文档
+    description: 内部运营平台系统核心接口
+    version: ${revision:6.0.0}
+  group-configs:
+    - group: 1.认证模块
+      packages-to-scan: com.ym.web
+    - group: 2.系统与运营模块
+      packages-to-scan: com.ym.system

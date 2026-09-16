@@ -1,0 +1,31 @@
+# Apply together with docker-compose.yml only after coordinated initialization.
+# Internal RPC uses the existing Nacos registry; no JetLinks RPC host port is published.
+services:
+  ym-iot:
+    image: ${YM_IOT_JETLINKS_IMAGE:?Set the verified immutable local compatibility image}
+    environment:
+      SERVER_PORT: "9222"
+      SPRING_PROFILES_ACTIVE: dev
+      YM_IOT_JETLINKS_ENABLED: "true"
+      # 接入任务已迁移至 JetLinks，覆盖基础 Compose 的旧任务开关。
+      SNAIL_JOB_ENABLED: "false"
+      # Local migration verification keeps the existing disabled SMS sender explicit.
+      SMS_ENABLED: "false"
+      YM_IOT_JETLINKS_CONSUMER_ID: ym-iot-business-v1
+      YM_MQTT_ENABLED: "false"
+      MQTT_ENABLED: "false"
+      MQTT_CLIENT_ENABLED: "false"
+      MICA_MQTT_ENABLED: "false"
+      YM_IOT_FERTILIZER_ENABLED: "false"
+      YM_IOT_MOTORVALVE_ENABLED: "false"
+      YM_IOT_HFZK_ENABLED: "false"
+      YM_IOT_WVP_ENABLED: "false"
+      YM_IOT_EMQX_PRESENCE_ENABLED: "false"
+  ym-agriculture:
+    image: ${YM_AGRICULTURE_JETLINKS_IMAGE:?Set the verified local agriculture image}
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+  ym-dbo:
+    image: ${YM_DBO_JETLINKS_IMAGE:?Set the verified DBO ownership image}
+  ym-system:
+    image: ${YM_SYSTEM_JETLINKS_IMAGE:?Set the verified native inbox receiver image}

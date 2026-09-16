@@ -1,5 +1,5 @@
 -- -----------------------------------------------------------------------------
--- RuoYi-Cloud-Plus 6.0.0 多租户升级脚本（MySQL）
+-- YM-Cloud-Plus 6.0.0 多租户升级脚本（MySQL）
 --
 -- 使用方式：
 -- 1. 停止相关服务，保持 script/config/nacos/application-common.yml 中 tenant.enable=false。

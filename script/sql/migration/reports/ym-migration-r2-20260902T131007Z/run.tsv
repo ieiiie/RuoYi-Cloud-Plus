@@ -1,0 +1,2 @@
+run_id	round_no	started_at	finished_at	status	source_snapshot_at	failure_reason
+ym-migration-r2-20260902T131007Z	2	2026-09-02 21:10:26	2026-09-02 21:11:47	DONE_SOURCE_ISSUES	2026-09-02 21:10:26	NULL

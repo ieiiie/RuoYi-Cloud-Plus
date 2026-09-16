@@ -1,0 +1,94 @@
+package com.ym.system.controller.monitor;
+
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.baomidou.lock.annotation.Lock4j;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import com.ym.common.core.constant.CacheNames;
+import com.ym.common.core.domain.PageResult;
+import com.ym.common.core.domain.R;
+import com.ym.common.excel.utils.ExcelBuilder;
+import com.ym.common.log.annotation.Log;
+import com.ym.common.log.enums.BusinessType;
+import com.ym.common.mybatis.core.page.PageQuery;
+import com.ym.common.redis.annotation.RepeatSubmit;
+import com.ym.common.redis.utils.RedisUtils;
+import com.ym.common.web.core.BaseController;
+import com.ym.system.domain.bo.SysLoginInfoBo;
+import com.ym.system.domain.vo.SysLoginInfoVo;
+import com.ym.system.service.ISysLoginInfoService;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * 系统访问记录
+ *
+ * @author Lion Li
+ */
+@Validated
+@RequiredArgsConstructor
+@RestController
+@RequestMapping("/loginInfo")
+public class SysLoginInfoController extends BaseController {
+
+    private final ISysLoginInfoService loginInfoService;
+
+    /**
+     * 获取系统访问记录列表
+     */
+    @SaCheckPermission("monitor:logininfo:list")
+    @GetMapping("/list")
+    public R<PageResult<SysLoginInfoVo>> list(SysLoginInfoBo loginInfo, PageQuery pageQuery) {
+        return R.ok(loginInfoService.selectPageLoginInfoList(loginInfo, pageQuery));
+    }
+
+    /**
+     * 导出系统访问记录列表
+     */
+    @Log(title = "登录日志", businessType = BusinessType.EXPORT)
+    @SaCheckPermission("monitor:logininfo:export")
+    @PostMapping("/export")
+    public void export(SysLoginInfoBo loginInfo, HttpServletResponse response) {
+        List<SysLoginInfoVo> list = loginInfoService.selectLoginInfoList(loginInfo);
+        ExcelBuilder.of(list, SysLoginInfoVo.class).sheetName("登录日志").toResponse(response);
+    }
+
+    /**
+     * 批量删除登录日志
+     *
+     * @param infoIds 日志ids
+     */
+    @SaCheckPermission("monitor:logininfo:remove")
+    @Log(title = "登录日志", businessType = BusinessType.DELETE)
+    @DeleteMapping("/{infoIds}")
+    public R<Void> remove(@PathVariable Long[] infoIds) {
+        return toAjax(loginInfoService.deleteLoginInfoByIds(infoIds));
+    }
+
+    /**
+     * 清理系统访问记录
+     */
+    @SaCheckPermission("monitor:logininfo:remove")
+    @Log(title = "登录日志", businessType = BusinessType.CLEAN)
+    @Lock4j
+    @DeleteMapping("/clean")
+    public R<Void> clean() {
+        loginInfoService.cleanLoginInfo();
+        return R.ok();
+    }
+
+    @SaCheckPermission("monitor:logininfo:unlock")
+    @Log(title = "账户解锁", businessType = BusinessType.OTHER)
+    @RepeatSubmit()
+    @GetMapping("/unlock/{userName}")
+    public R<Void> unlock(@PathVariable("userName") String userName) {
+        String loginName = CacheNames.PWD_ERR_CNT_KEY + userName;
+        if (RedisUtils.hasKey(loginName)) {
+            RedisUtils.deleteObject(loginName);
+        }
+        return R.ok();
+    }
+
+}

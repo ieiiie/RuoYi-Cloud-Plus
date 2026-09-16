@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.ym</groupId>
+        <artifactId>ym-cloud-plus</artifactId>
+        <version>${revision}</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <modules>
+        <module>ym-common-bom</module>
+        <module>ym-common-alibaba-bom</module>
+        <module>ym-common-log</module>
+        <module>ym-common-service-impl</module>
+        <module>ym-common-excel</module>
+        <module>ym-common-core</module>
+        <module>ym-common-redis</module>
+        <module>ym-common-doc</module>
+        <module>ym-common-security</module>
+        <module>ym-common-satoken</module>
+        <module>ym-common-web</module>
+        <module>ym-common-mybatis</module>
+        <module>ym-common-tenant</module>
+        <module>ym-common-dubbo</module>
+        <module>ym-common-seata</module>
+        <module>ym-common-loadbalancer</module>
+        <module>ym-common-oss</module>
+        <module>ym-common-mail</module>
+        <module>ym-common-sms</module>
+        <module>ym-common-logstash</module>
+        <module>ym-common-elasticsearch</module>
+        <module>ym-common-skylog</module>
+        <module>ym-common-prometheus</module>
+        <module>ym-common-translation</module>
+        <module>ym-common-sensitive</module>
+        <module>ym-common-json</module>
+        <module>ym-common-encrypt</module>
+        <module>ym-common-push</module>
+        <module>ym-common-social</module>
+        <module>ym-common-nacos</module>
+        <module>ym-common-bus</module>
+        <module>ym-common-mqtt</module>
+    </modules>
+
+    <artifactId>ym-common</artifactId>
+    <packaging>pom</packaging>
+
+    <description>
+        ym-common通用模块
+    </description>
+
+</project>

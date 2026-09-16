@@ -1,0 +1,203 @@
+spring:
+  datasource:
+    dynamic:
+      primary: master
+      datasource:
+        master:
+          type: com.zaxxer.hikari.HikariDataSource
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://host.docker.internal:3306/ym-agriculture?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&rewriteBatchedStatements=true&allowPublicKeyRetrieval=true
+          username: root
+          password: ${YM_AGRICULTURE_PASSWORD}
+
+dubbo:
+  application:
+    register-mode: instance
+
+snail-job:
+  enabled: true
+  server:
+    host: host.docker.internal
+    port: 17888
+  namespace: 764d604ec6fc45f68cd92514c40e9e1a
+  group: ym-agriculture
+  token: ${YM_AGRICULTURE_TOKEN}
+  port: 17891
+  rpc-type: grpc
+
+amap-weather:
+  enabled: true
+  key: f5d032c5b406a0828183cb288df73dd3
+  base-url: https://restapi.amap.com/
+  timeout:
+    connect: 10
+    read: 20
+
+nmc-weather-alert:
+  enabled: true
+  base-url: https://www.nmc.cn/
+  allowed-host: www.nmc.cn
+  page-size: 50
+  max-pages-per-province: 20
+  province-interval-ms: 500
+  fresh-within-minutes: 30
+  deactivate-after-missing: 2
+  fetch-detail: true
+  timeout:
+    connect: 8
+    read: 15
+
+satellite:
+  enabled: true
+  base-url: http://8.130.175.222:5000/api/dk/
+  delete-base-url: http://8.130.175.222:5019/api/dk/
+  call-url: http://162.14.203.208:19100/prod-api/smart-farming/satellite/callback/result
+  submit-max-concurrency: 10
+  timeout:
+    connect: 30
+    read: 30
+    write: 30
+
+aizuda:
+  oss:
+    gis-oss:
+      platform: aliyun
+      endpoint: https://oss-cn-hangzhou.aliyuncs.com
+      accessKey: ${AGRICULTURE_GIS_OSS_ACCESS_KEY}
+      secretKey: ${AGRICULTURE_GIS_OSS_SECRET_KEY}
+      bucketName: data-satellite
+      allowMediaType:
+        - image/gif
+        - application/
+
+smart-farming:
+  inspection-ai:
+    enabled: true
+    base-url: https://ws-luuidypsepf2wyg3.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+    chat-completions-path: /chat/completions
+    api-key: ${YM_AGRICULTURE_API_KEY}
+    model-id: qwen-vl-max
+    max-context-tokens: 32768
+    context-estimate-safety-factor: 1.30
+    connect-timeout-seconds: 10
+    read-timeout-seconds: 60
+    stale-generation-seconds: 120
+    max-images-per-request: 6
+    max-image-bytes: 10485760
+    max-image-pixels: 16777216
+    signed-url-ttl-seconds: 600
+    max-question-length: 2000
+    per-user-per-minute: 10
+    summary:
+      model-id: tongyi-xiaomi-analysis-flash
+      fallback-model-id: qwen-turbo
+      temperature: 0
+      top-k: 1
+      context-threshold-ratio: 0.70
+      retain-recent-rounds: 12
+  news:
+    media-transfer:
+      enabled: true
+      batch-size: 10
+      max-items-per-revision: 30
+      image-max-bytes: 10485760
+      video-max-bytes: 209715200
+      revision-max-bytes: 524288000
+      connect-timeout-seconds: 5
+      read-timeout-seconds: 60
+      call-timeout-seconds: 600
+      max-redirects: 3
+      max-attempts: 3
+      retry-delays-seconds: [60, 300, 1800]
+      temp-dir: /tmp/ym-news-media
+      platform-tenant-id: "000000"
+
+wechat:
+  employee-miniprogram:
+    enabled: true
+    app-id: "wx6a55a4621e61eea9"
+    app-secret: ${YM_AGRICULTURE_APP_SECRET}
+    invite-code:
+      page: pages/login/index
+      env-version: trial
+    employee:
+      auto-approve: false
+
+ym:
+  agriculture:
+    oss:
+      enabled: true
+  iot:
+  alg-back:
+    base-url: http://162.14.203.208:9086/api
+    callback-url: http://8.139.254.3:9900/smart-farming/ai/callback/inference
+    infer-mode: IMAGE
+    image-infer-callback-url: http://8.139.254.3:9900/smart-farming/ai/callback/image-inference
+    auto-create-customer: true
+    timeout:
+      connect-seconds: 15
+      read-seconds: 120
+      write-seconds: 30
+    auth:
+      username: admin
+      password: ${YM_AGRICULTURE_PASSWORD}
+      auto-login-on-startup: true
+    token-refresh:
+      enabled: true
+      renew-before-expire-seconds: 300
+      skip-when-jwt-valid: true
+  employee:
+    app-roles:
+      - code: stask:production_admin
+        name: 生产管理员
+      - code: stask:expert
+        name: 专家 / 技术员
+      - code: stask:group_leader
+        name: 农事分配组长
+      - code: stask:leader
+        name: 领导
+      - code: stask:worker
+        name: 工人
+  stask:
+    voice:
+      enabled: true
+      voice-name: x2_ugsp_dilare
+      audio-format: mp3
+      tts-aue: lame
+      tts-ent: intp65
+      tts-text-encoding: unicode
+      cache-version: v1
+      translate-url: https://ntrans.xfyun.cn/v2/ots
+      translate-to: uy
+      tts-url: wss://tts-api.xfyun.cn/v2/tts
+      app-id: 8e024745
+      api-key: ${YM_AGRICULTURE_API_KEY}
+      api-secret: ${YM_AGRICULTURE_API_SECRET}
+      timeout:
+        connect: 10
+        read: 30
+      worker:
+        enabled: true
+        batch-size: 10
+        processing-timeout-minutes: 10
+        retry-delay-minutes: [1, 5, 30]
+        max-retry-count: 3
+    notify:
+      sms-template-id: SMS_507295054
+      content-max-length: 160
+  smart-farming:
+    translation:
+      enabled: true
+      translate-url: https://ntrans.xfyun.cn/v2/ots
+      app-id: 8e024745
+      api-key: ${YM_AGRICULTURE_API_KEY}
+      api-secret: ${YM_AGRICULTURE_API_SECRET}
+      translate-to: uy
+      timeout:
+        connect: 10
+        read: 30
+      worker:
+        enabled: true
+        batch-size: 20
+        lease-minutes: 10
+        max-retry-count: 3

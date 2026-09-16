@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.dromara</groupId>
-    <artifactId>ruoyi-cloud-plus</artifactId>
+    <groupId>com.ym</groupId>
+    <artifactId>ym-cloud-plus</artifactId>
     <version>${revision}</version>
 
-    <name>RuoYi-Cloud-Plus</name>
-    <url>https://gitee.com/dromara/RuoYi-Cloud-Plus</url>
-    <description>Dromara RuoYi-Cloud-Plus微服务系统</description>
+    <name>YM-Cloud-Plus</name>
+    <url>https://github.com/ieiiie/YM-Cloud-Plus</url>
+    <description>YM-Cloud-Plus 微服务系统</description>
 
     <properties>
         <!-- 项目基础配置 -->
@@ -73,6 +73,10 @@
         <mica-mqtt.version>2.6.8</mica-mqtt.version>
         <!-- mq配置 -->
         <rocketmq.version>2.3.6</rocketmq.version>
+        <!-- 分布式任务调度 -->
+        <snail-job.version>2.0.2</snail-job.version>
+        <!-- HFZK HTTP 客户端 -->
+        <retrofit.version>2.9.0</retrofit.version>
 
         <!-- Maven 构建插件版本 -->
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
@@ -125,8 +129,8 @@
 
             <!-- SpringCloud Alibaba 微服务 -->
             <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-alibaba-bom</artifactId>
+                <groupId>com.ym</groupId>
+                <artifactId>ym-common-alibaba-bom</artifactId>
                 <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -170,8 +174,8 @@
 
             <!-- common 的依赖配置-->
             <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-common-bom</artifactId>
+                <groupId>com.ym</groupId>
+                <artifactId>ym-common-bom</artifactId>
                 <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -179,8 +183,8 @@
 
             <!-- api 的依赖配置-->
             <dependency>
-                <groupId>org.dromara</groupId>
-                <artifactId>ruoyi-api-bom</artifactId>
+                <groupId>com.ym</groupId>
+                <artifactId>ym-api-bom</artifactId>
                 <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -380,15 +384,39 @@
                 <version>${mica-mqtt.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.aizuda</groupId>
+                <artifactId>snail-job-client-starter</artifactId>
+                <version>${snail-job.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.aizuda</groupId>
+                <artifactId>snail-job-client-job-core</artifactId>
+                <version>${snail-job.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.retrofit2</groupId>
+                <artifactId>retrofit</artifactId>
+                <version>${retrofit.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.retrofit2</groupId>
+                <artifactId>converter-jackson</artifactId>
+                <version>${retrofit.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
     <modules>
-        <module>ruoyi-auth</module>
-        <module>ruoyi-gateway</module>
-        <module>ruoyi-modules</module>
-        <module>ruoyi-api</module>
-        <module>ruoyi-common</module>
+        <module>ym-auth</module>
+        <module>ym-gateway</module>
+        <module>ym-modules</module>
+        <module>ym-api</module>
+        <module>ym-common</module>
     </modules>
     <packaging>pom</packaging>
 

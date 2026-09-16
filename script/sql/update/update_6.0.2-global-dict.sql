@@ -1,5 +1,5 @@
 -- -----------------------------------------------------------------------------
--- RuoYi-Cloud-Plus 6.0.2 全局字典升级脚本（MySQL）
+-- YM-Cloud-Plus 6.0.2 全局字典升级脚本（MySQL）
 --
 -- 前置条件：已执行 update_6.0.0-tenant.sql，sys_dict_type 和 sys_dict_data
 -- 均包含 tenant_id。执行期间请停止服务或保持 tenant.enable=false。

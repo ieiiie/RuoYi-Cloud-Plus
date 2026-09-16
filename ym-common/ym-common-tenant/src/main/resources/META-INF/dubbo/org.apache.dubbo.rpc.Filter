@@ -1,0 +1,1 @@
+tenantDubboFilter=com.ym.common.tenant.filter.TenantDubboFilter
